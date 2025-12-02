@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Store</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- BOTÓN QUE MUESTRA LA SIDEBAR (oculto al inicio) -->
+    <button id="showSidebarBtn" class="show-sidebar-btn">➕</button>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            
+            <button class="sidebar-hide-btn">🗕</button>
+        </div>
+
+        <h2 class="logo">MusicApp</h2>
+
+        <nav class="menu">
+            <p class="section-title">Navegación</p>
+            <a href="#">Inicio</a>
+            <a href="#">Explorar</a>
+            <a href="#">Géneros</a>
+            <a href="#">Tendencias</a>
+            <a href="#">Artistas</a>
+            <a href="#">Álbumes</a>
+            <a href="#">Mis Compras</a>
+            <a href="#">Ajustes</a>
+            <a href="#">Ayuda</a>
+
+            <p class="section-title">Del usuario</p>
+            <a href="#">Biblioteca</a>
+            <a href="#">Favoritos</a>
+            <a href="#">Historial</a>
+        </nav>
+    </aside>
+
+    <!-- CONTENIDO -->
+    <div class="content">
+        <!-- HEADER -->
+        <header class="header">
+            <h1>Tienda de Música</h1>
+            <div class="icons">
+                <a href="·" class="icon-btn">🛒</a>
+                <a href="login.html" class="icon-btn">👤</a>
+            </div>
+        </header>
+
+        <main>
+            <h2>Álbumes disponibles</h2>
+
+            <div class="album-grid">
+
+                <div class="album-card">
+                    <img src="https://via.placeholder.com/150" alt="">
+                    <h3>Álbum 1</h3>
+                    <p>Artista</p>
+                    <button>Comprar</button>
+                </div>
+
+                <div class="album-card">
+                    <img src="https://via.placeholder.com/150" alt="">
+                    <h3>Álbum 2</h3>
+                    <p>Artista</p>
+                    <button>Comprar</button>
+                </div>
+
+                <div class="album-card">
+                    <img src="https://via.placeholder.com/150" alt="">
+                    <h3>Álbum 3</h3>
+                    <p>Artista</p>
+                    <button>Comprar</button>
+                </div>
+
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2025 Music Store - Todos los derechos reservados</p>
+        </footer>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

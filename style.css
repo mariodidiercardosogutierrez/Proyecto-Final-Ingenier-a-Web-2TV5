@@ -1,0 +1,285 @@
+:root {
+    --red-main: #8b0000;
+    --red-light: #b30000;
+    --red-dark: #4a0000;
+    --white-clean: #ffffff;
+    --white-soft: #f5f5f5;
+}
+
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+}
+
+/* BODY */
+body {
+    display: flex;
+    background: linear-gradient(135deg, var(--red-main), var(--red-dark));
+    color: var(--white-clean);
+}
+
+/* --- BOTÓN PARA MOSTRAR LA SIDEBAR --- */
+.show-sidebar-btn {
+    position: fixed;
+    top: 80px;
+    left: 20px;
+    padding: 10px 15px;
+    background: var(--red-main);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: none; /* Se muestra solo cuando la sidebar está oculta */
+    z-index: 9999;
+    font-size: 16px;
+}
+.show-sidebar-btn:hover {
+    background: var(--red-light);
+}
+
+/* --- SIDEBAR --- */
+.sidebar {
+    width: 260px;
+    background: var(--white-clean);
+    height: 100vh;
+    padding: 20px;
+    position: fixed;
+    overflow-y: auto;
+    border-right: 2px solid var(--red-main);
+    transition: transform 0.3s ease, box-shadow 0.25s ease;
+    color: var(--red-main);
+}
+
+/* Cuando la sidebar está oculta */
+.sidebar.hidden {
+    transform: translateX(-280px);
+}
+
+/* Glow */
+.sidebar:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 25px rgba(139, 0, 0, 0.25);
+}
+
+/* Encabezado de sidebar */
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-title {
+    font-size: 20px;
+}
+
+.sidebar-hide-btn {
+    background: var(--red-main);
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.sidebar-hide-btn:hover {
+    background: var(--red-light);
+}
+
+/* Logo */
+.logo {
+    font-size: 25px;
+    margin: 20px 0;
+    text-align: center;
+    color: var(--red-main);
+}
+
+/* MENÚ */
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.menu a {
+    text-decoration: none;
+    color: var(--red-main);
+    padding: 10px;
+    border-radius: 6px;
+    background: var(--white-soft);
+    transition: background 0.3s, color 0.3s;
+}
+
+.menu a:hover {
+    background: var(--red-main);
+    color: var(--white-clean);
+}
+
+.section-title {
+    margin-top: 20px;
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: var(--red-light);
+    text-transform: uppercase;
+}
+
+/* --- CONTENIDO --- */
+.content {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    transition: margin-left 0.3s ease;
+}
+
+.content.full {
+    margin-left: 0;
+    width: 100%;
+}
+
+/* HEADER */
+.header {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    background: var(--white-clean);
+    border-bottom: 2px solid var(--red-main);
+    position: sticky;
+    top: 0;
+    color: var(--red-main);
+}
+
+/* MAIN */
+main {
+    padding: 30px;
+}
+
+.album-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.album-card {
+    background: var(--white-clean);
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    border: 2px solid var(--red-main);
+    color: var(--red-main);
+    transition: transform 0.3s;
+}
+
+.album-card:hover {
+    transform: translateY(-5px);
+}
+
+.album-card img {
+    width: 100%;
+    border-radius: 10px;
+    border: 2px solid var(--red-main);
+}
+
+.album-card button {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: var(--red-main);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--white-clean);
+}
+
+.album-card button:hover {
+    background: var(--red-light);
+}
+
+/* FOOTER */
+footer {
+    padding: 15px;
+    text-align: center;
+    background: var(--white-clean);
+    border-top: 2px solid var(--red-main);
+    margin-top: 20px;
+    color: var(--red-main);
+}
+
+/* LOGIN CARD */
+.login-card {
+    background: var(--white-clean);
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    width: 350px;
+    text-align: center;
+    animation: fadeIn 0.6s ease;
+}
+
+.login-card h2 {
+    margin-bottom: 20px;
+    color: var(--red-main);
+}
+
+.input-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--red-dark);
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.input-group input:focus {
+    border-color: var(--red-main);
+    box-shadow: 0 0 5px rgba(139, 0, 0, 0.5);
+}
+
+.btn {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--red-main);
+    color: var(--white-clean);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease;
+}
+
+.btn:hover {
+    background-color: var(--red-light);
+}
+
+.register-text {
+    margin-top: 15px;
+    font-size: 14px;
+    color: var(--red-dark);
+}
+
+.register-link {
+    color: var(--red-main);
+    text-decoration: none;
+}
+
+.register-link:hover {
+    text-decoration: underline;
+}
+
+@keyframes fadeIn {
+    from {opacity: 0; transform: translateY(-10px);}
+    to {opacity: 1; transform: translateY(0);}
+}
+
+
