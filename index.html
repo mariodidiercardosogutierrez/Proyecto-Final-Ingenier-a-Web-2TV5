@@ -7,19 +7,22 @@
     <link rel="stylesheet" href="style.css">
 </head>
 
+<script>
+// Verificación rápida de sesión
+if (!localStorage.getItem("isLoggedIn") || localStorage.getItem("isLoggedIn") !== "true") {
+    window.location.href = "login.html";
+}
+</script>
 <body>
 
-    <!-- BOTÓN QUE MUESTRA LA SIDEBAR (oculto al inicio) -->
+    <!-- BOTÓN QUE MUESTRA LA SIDEBAR -->
     <button id="showSidebarBtn" class="show-sidebar-btn">➕</button>
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="sidebar-header">
-            
             <button class="sidebar-hide-btn">🗕</button>
         </div>
-
-        <h2 class="logo">MusicApp</h2>
 
         <nav class="menu">
             <p class="section-title">Navegación</p>
@@ -44,39 +47,36 @@
     <div class="content">
         <!-- HEADER -->
         <header class="header">
-            <h1>Tienda de Música</h1>
+            
+<div class="header-logo">
+            <img src="images/logo.png" alt="Tienda de Música">
+        </div>
             <div class="icons">
-                <a href="·" class="icon-btn">🛒</a>
-                <a href="login.html" class="icon-btn">👤</a>
+                <a href="#" class="icon-btn">🛒</a>
+                
+                <!-- SOLO DROPDOWN, SIN BOTÓN EXTRA -->
+                <div class="user-dropdown">
+                    <button class="user-btn icon-btn">👤</button>
+                    <div class="dropdown-menu">
+                        <div class="user-info">
+                            <strong id="userEmailDisplay"></strong>
+                            <small id="userRoleDisplay"></small>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item">Mi Perfil</a>
+                        <a href="#" class="dropdown-item">Configuración</a>
+                        <a href="#" class="dropdown-item">Mis Compras</a>
+                        <div class="dropdown-divider"></div>
+                        <button id="logoutBtnDropdown" class="dropdown-item logout-btn">Cerrar Sesión</button>
+                    </div>
+                </div>
             </div>
         </header>
 
         <main>
             <h2>Álbumes disponibles</h2>
-
             <div class="album-grid">
-
-                <div class="album-card">
-                    <img src="https://via.placeholder.com/150" alt="">
-                    <h3>Álbum 1</h3>
-                    <p>Artista</p>
-                    <button>Comprar</button>
-                </div>
-
-                <div class="album-card">
-                    <img src="https://via.placeholder.com/150" alt="">
-                    <h3>Álbum 2</h3>
-                    <p>Artista</p>
-                    <button>Comprar</button>
-                </div>
-
-                <div class="album-card">
-                    <img src="https://via.placeholder.com/150" alt="">
-                    <h3>Álbum 3</h3>
-                    <p>Artista</p>
-                    <button>Comprar</button>
-                </div>
-
+                <!-- ... tus álbumes ... -->
             </div>
         </main>
 

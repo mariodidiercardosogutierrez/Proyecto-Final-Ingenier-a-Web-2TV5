@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel de Administración</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>Admin Panel</h3> 
+        </div>
+        <div class="logo">🎵 MusicControl</div>
+        <p class="section-title">Gestión</p>
+        <div class="menu"> <a href="#" data-section="usuarios">Usuarios</a> <a href="#" data-section="roles">Roles</a>
+            <a href="#" data-section="catalogo">Catálogo Musical</a> </div>
+        <p class="section-title">Reportes</p>
+        <div class="menu"> <a href="#" data-section="reportes">Reportes</a> <a href="#"
+                data-section="auditoria">Auditoría</a> </div>
+    </aside> <button id="showSidebarBtn" class="show-sidebar-btn">☰</button>
+    <div class="content" id="content">
+        <header class="header">
+            <h2 id="sectionTitle">Panel de Administración</h2>
+<button id="logoutBtn" class="btn btn-danger">Cerrar Sesión</button>
+            
+        </header>
+        <main id="mainContent">
+            <h3>Bienvenido Administrador</h3>
+            <p>Selecciona una sección para comenzar.</p>
+        </main>
+    </div>
+    <script src="main.js"></script>
+
+</body>
+
+</html>
