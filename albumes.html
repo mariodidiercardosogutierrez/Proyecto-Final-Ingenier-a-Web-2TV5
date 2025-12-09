@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Store - Catálogo de Jazz</title>
+    <title>SoundSpace - Álbumes</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,17 +19,15 @@
 
         <nav class="menu">
             <p class="section-title">Navegación</p>
-            <a href="#" class="active">Inicio</a>
-            <a href="#">Géneros</a>
-            <a href="#">Artistas</a>
-            <a href="#">Álbumes</a>
-            <a href="#">Mis Compras</a>
-            <a href="#">Ayuda</a>
+            <a href="index.html" class="active">Inicio</a>
+            <a href="albumes.html">Géneros</a>
+            <a href="artistas.html">Artistas</a>
+            <a href="compras.html">Mis Compras</a>
+            <a href="tarjetas.html">Tarjetas</a>
 
             <p class="section-title">Del usuario</p>
-            <a href="#">Biblioteca</a>
-            <a href="#">Favoritos</a>
-            <a href="#">Historial</a>
+            <a href="biblioteca.html">Biblioteca</a>
+            <a href="favoritos.html">Favoritos</a>
         </nav>
     </aside>
 
@@ -38,23 +36,21 @@
         <!-- HEADER -->
         <header class="header">
             <div class="header-logo">
-                <img src="images/logo.png" alt="Tienda de Música">
+                <img src="images/logo.png" alt="SoundSpace">
             </div>
+
             <div class="icons">
                 <a href="#" class="icon-btn">🛒</a>
-                
-                <!-- DROPDOWN DE USUARIO -->
+
                 <div class="user-dropdown">
                     <button class="user-btn icon-btn">👤</button>
+
                     <div class="dropdown-menu">
                         <div class="user-info">
-                            <strong id="userEmailDisplay"></strong>
-                            <small id="userRoleDisplay"></small>
+                            <strong id="userNameDisplay"></strong><br>
+                            <small id="userEmailDisplay"></small>
                         </div>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">Mi Perfil</a>
-                        <a href="#" class="dropdown-item">Configuración</a>
-                        <a href="#" class="dropdown-item">Mis Compras</a>
+
                         <div class="dropdown-divider"></div>
                         <button id="logoutBtnDropdown" class="dropdown-item logout-btn">Cerrar Sesión</button>
                     </div>
@@ -62,313 +58,331 @@
             </div>
         </header>
 
-        <!-- SECCIÓN PRINCIPAL CON CATÁLOGO DE JAZZ -->
+        <!-- SECCIÓN PRINCIPAL -->
         <main>
             <section class="catalog-section">
                 <div class="catalog-container">
                     <div class="catalog-header">
-                        <h2>Catálogo de Álbumes de Jazz</h2>
-                        <p>Haz clic en una miniatura para ver diferentes vistas del álbum. Explora nuestra colección de jazz clásico y contemporáneo.</p>
+                        <h2>Catálogo SoundSpace</h2>
+                        <p>Explora nuestros álbumes disponibles.</p><br><br>
+                        
+                        <!-- FILTROS POR GÉNERO -->
+                        <div class="genre-filters">
+                            <button class="genre-btn active" data-genre="Todos">Todos</button>
+                            <!-- Los géneros se cargarán dinámicamente aquí -->
+                        </div>
                     </div>
-                    
-                    <!-- NAVEGACIÓN POR GÉNEROS -->
-                    <div class="catalog-nav">
-                        <button class="genre-btn active">Todos</button>
-                        <button class="genre-btn">Bebop</button>
-                        <button class="genre-btn">Cool Jazz</button>
-                        <button class="genre-btn">Fusion</button>
-                        <button class="genre-btn">Smooth Jazz</button>
-                    </div>
-                    
-                    <!-- TABLA DE ÁLBUMES -->
-                    <table class="catalog">
-                        <tbody>
-                            <!-- FILA 1 -->
+
+                    <!-- CONTENEDOR DINÁMICO -->
+                    <table class="catalog" id="albumTable">
+                        <tbody id="albumBody">
                             <tr>
-                                <!-- ÁLBUM 1 -->
-                                <td>
-                                    <div class="product-card">
-                                        <!-- FILA 1: FOTO, TÍTULO Y ARTISTA -->
-                                        <div class="product-header">
-                                            <figure class="product-image">
-                                                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&h=300&fit=crop" alt="Kind of Blue">
-                                            </figure>
-                                            <div class="product-title-info">
-                                                <h3 class="product-name">Kind of Blue</h3>
-                                                <div class="product-artist">Miles Davis</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- FILA 2: DESCRIPCIÓN -->
-                                        <p class="product-description">
-                                            El álbum de jazz más vendido de todos los tiempos. Grabado en 1959, es una obra maestra del jazz modal.
-                                        </p>
-                                        
-                                        <!-- FILA 3: AÑO, TEMAS, PRECIO -->
-                                        <div class="product-meta-row">
-                                            <span class="meta-item year">1959</span>
-                                            <span class="meta-item tracks">5 temas</span>
-                                            <span class="meta-item price">$599 MXN</span>
-                                        </div>
-                                        
-                                        <!-- FILA 4: MINIATURAS -->
-                                        <div class="product-thumbs-row">
-                                            <table class="thumbs">
-                                                <tr>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=150&fit=crop"></td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                        
-                                        <!-- FILA 5: BOTÓN AGREGAR AL CARRITO -->
-                                        <div class="product-action-row">
-                                            <button class="buy-btn">Agregar al carrito</button>
-                                        </div>
-                                    </div>
-                                </td>
-                                
-                                <!-- ÁLBUM 2 -->
-                                <td>
-                                    <div class="product-card">
-                                        <!-- FILA 1: FOTO, TÍTULO Y ARTISTA -->
-                                        <div class="product-header">
-                                            <figure class="product-image">
-                                                <img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=300&fit=crop" alt="A Love Supreme">
-                                            </figure>
-                                            <div class="product-title-info">
-                                                <h3 class="product-name">A Love Supreme</h3>
-                                                <div class="product-artist">John Coltrane</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- FILA 2: DESCRIPCIÓN -->
-                                        <p class="product-description">
-                                            Una suite espiritual en cuatro partes que representa la cúspide de la carrera de Coltrane. Grabada en una sola sesión en 1964.
-                                        </p>
-                                        
-                                        <!-- FILA 3: AÑO, TEMAS, PRECIO -->
-                                        <div class="product-meta-row">
-                                            <span class="meta-item year">1965</span>
-                                            <span class="meta-item tracks">4 temas</span>
-                                            <span class="meta-item price">$649 MXN</span>
-                                        </div>
-                                        
-                                        <!-- FILA 4: MINIATURAS -->
-                                        <div class="product-thumbs-row">
-                                            <table class="thumbs">
-                                                <tr>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&h=150&fit=crop"></td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                        
-                                        <!-- FILA 5: BOTÓN AGREGAR AL CARRITO -->
-                                        <div class="product-action-row">
-                                            <button class="buy-btn">Agregar al carrito</button>
-                                        </div>
-                                    </div>
-                                </td>
-                                
-                                <!-- ÁLBUM 3 -->
-                                <td>
-                                    <div class="product-card">
-                                        <!-- FILA 1: FOTO, TÍTULO Y ARTISTA -->
-                                        <div class="product-header">
-                                            <figure class="product-image">
-                                                <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop" alt="Time Out">
-                                            </figure>
-                                            <div class="product-title-info">
-                                                <h3 class="product-name">Time Out</h3>
-                                                <div class="product-artist">Dave Brubeck Quartet</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- FILA 2: DESCRIPCIÓN -->
-                                        <p class="product-description">
-                                            Famoso por sus compases inusuales, incluye el éxito "Take Five" en 5/4. Uno de los álbumes de jazz más influyentes de la historia.
-                                        </p>
-                                        
-                                        <!-- FILA 3: AÑO, TEMAS, PRECIO -->
-                                        <div class="product-meta-row">
-                                            <span class="meta-item year">1959</span>
-                                            <span class="meta-item tracks">7 temas</span>
-                                            <span class="meta-item price">$549 MXN</span>
-                                        </div>
-                                        
-                                        <!-- FILA 4: MINIATURAS -->
-                                        <div class="product-thumbs-row">
-                                            <table class="thumbs">
-                                                <tr>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=200&h=150&fit=crop"></td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                        
-                                        <!-- FILA 5: BOTÓN AGREGAR AL CARRITO -->
-                                        <div class="product-action-row">
-                                            <button class="buy-btn">Agregar al carrito</button>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            
-                            <!-- FILA 2 -->
-                            <tr>
-                                <!-- ÁLBUM 4 -->
-                                <td>
-                                    <div class="product-card">
-                                        <!-- FILA 1: FOTO, TÍTULO Y ARTISTA -->
-                                        <div class="product-header">
-                                            <figure class="product-image">
-                                                <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&h=300&fit=crop" alt="The Sidewinder">
-                                            </figure>
-                                            <div class="product-title-info">
-                                                <h3 class="product-name">The Sidewinder</h3>
-                                                <div class="product-artist">Lee Morgan</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- FILA 2: DESCRIPCIÓN -->
-                                        <p class="product-description">
-                                            Un álbum de hard bop que se convirtió en un éxito inesperado en 1964. El tema principal se convirtió en un estándar del jazz.
-                                        </p>
-                                        
-                                        <!-- FILA 3: AÑO, TEMAS, PRECIO -->
-                                        <div class="product-meta-row">
-                                            <span class="meta-item year">1964</span>
-                                            <span class="meta-item tracks">6 temas</span>
-                                            <span class="meta-item price">$529 MXN</span>
-                                        </div>
-                                        
-                                        <!-- FILA 4: MINIATURAS -->
-                                        <div class="product-thumbs-row">
-                                            <table class="thumbs">
-                                                <tr>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&h=150&fit=crop"></td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                        
-                                        <!-- FILA 5: BOTÓN AGREGAR AL CARRITO -->
-                                        <div class="product-action-row">
-                                            <button class="buy-btn">Agregar al carrito</button>
-                                        </div>
-                                    </div>
-                                </td>
-                                
-                                <!-- ÁLBUM 5 -->
-                                <td>
-                                    <div class="product-card">
-                                        <!-- FILA 1: FOTO, TÍTULO Y ARTISTA -->
-                                        <div class="product-header">
-                                            <figure class="product-image">
-                                                <img src="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=300&fit=crop" alt="Head Hunters">
-                                            </figure>
-                                            <div class="product-title-info">
-                                                <h3 class="product-name">Head Hunters</h3>
-                                                <div class="product-artist">Herbie Hancock</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- FILA 2: DESCRIPCIÓN -->
-                                        <p class="product-description">
-                                            Álbum revolucionario que fusiona jazz con funk y electrónica. Incluye "Chameleon", uno de los temas más reconocibles del jazz fusion.
-                                        </p>
-                                        
-                                        <!-- FILA 3: AÑO, TEMAS, PRECIO -->
-                                        <div class="product-meta-row">
-                                            <span class="meta-item year">1973</span>
-                                            <span class="meta-item tracks">4 temas</span>
-                                            <span class="meta-item price">$579 MXN</span>
-                                        </div>
-                                        
-                                        <!-- FILA 4: MINIATURAS -->
-                                        <div class="product-thumbs-row">
-                                            <table class="thumbs">
-                                                <tr>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=200&h=150&fit=crop"></td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                        
-                                        <!-- FILA 5: BOTÓN AGREGAR AL CARRITO -->
-                                        <div class="product-action-row">
-                                            <button class="buy-btn">Agregar al carrito</button>
-                                        </div>
-                                    </div>
-                                </td>
-                                
-                                <!-- ÁLBUM 6 -->
-                                <td>
-                                    <div class="product-card">
-                                        <!-- FILA 1: FOTO, TÍTULO Y ARTISTA -->
-                                        <div class="product-header">
-                                            <figure class="product-image">
-                                                <img src="https://images.unsplash.com/photo-1511735111819-9a3f7709049c?w=400&h=300&fit=crop" alt="The Shape of Jazz">
-                                            </figure>
-                                            <div class="product-title-info">
-                                                <h3 class="product-name">The Shape of Jazz</h3>
-                                                <div class="product-artist">Ornette Coleman</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- FILA 2: DESCRIPCIÓN -->
-                                        <p class="product-description">
-                                            Álbum pionero del free jazz que revolucionó la improvisación en 1959. Cambió para siempre la forma de entender la armonía en el jazz.
-                                        </p>
-                                        
-                                        <!-- FILA 3: AÑO, TEMAS, PRECIO -->
-                                        <div class="product-meta-row">
-                                            <span class="meta-item year">1959</span>
-                                            <span class="meta-item tracks">6 temas</span>
-                                            <span class="meta-item price">$599 MXN</span>
-                                        </div>
-                                        
-                                        <!-- FILA 4: MINIATURAS -->
-                                        <div class="product-thumbs-row">
-                                            <table class="thumbs">
-                                                <tr>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1511735111819-9a3f7709049c?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=200&h=150&fit=crop"></td>
-                                                    <td><img class="thumb" src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=150&fit=crop"></td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                        
-                                        <!-- FILA 5: BOTÓN AGREGAR AL CARRITO -->
-                                        <div class="product-action-row">
-                                            <button class="buy-btn">Agregar al carrito</button>
-                                        </div>
-                                    </div>
+                                <td colspan="3" style="text-align:center; padding:40px;">
+                                    Cargando álbumes...
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+
                 </div>
             </section>
         </main>
 
         <footer>
-            <p>© 2025 Soundspace - Todos los derechos reservados | Especialistas en musica desde 2005</p>
+            <p>© 2025 Soundspace - Todos los derechos reservados</p>
         </footer>
     </div>
 
+    <!-- SCRIPTS -->
+    <script>
+        // Variables globales
+        let allAlbums = [];
+        let currentGenre = "Todos";
+
+        // Función para calcular las imágenes según el ID del álbum
+        function getAlbumImages(idAlbum) {
+            // Calculamos la imagen principal (1.png, 2.png, etc.)
+            // Para cada álbum con id_album, mostramos 4 imágenes consecutivas
+            const startImage = (idAlbum - 1) * 4 + 1;
+            
+            return {
+                mainImage: `images/${startImage}.png`,
+                thumbnails: [
+                    `images/${startImage}.png`,
+                    `images/${startImage + 1}.png`,
+                    `images/${startImage + 2}.png`,
+                    `images/${startImage + 3}.png`
+                ]
+            };
+        }
+
+        // 1) Cargar géneros desde la API
+        function loadGenres() {
+            fetch("api.php?action=getGeneros")
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        console.error("Error al cargar géneros:", data);
+                        return;
+                    }
+
+                    const genreContainer = document.querySelector('.genre-filters');
+                    
+                    // Agregar cada género como botón
+                    data.generos.forEach(genero => {
+                        const button = document.createElement('button');
+                        button.className = 'genre-btn';
+                        button.textContent = genero;
+                        button.setAttribute('data-genre', genero);
+                        
+                        button.addEventListener('click', () => {
+                            // Remover clase active de todos los botones
+                            document.querySelectorAll('.genre-btn').forEach(btn => {
+                                btn.classList.remove('active');
+                            });
+                            // Agregar clase active al botón clickeado
+                            button.classList.add('active');
+                            // Filtrar álbumes
+                            filterAlbumsByGenre(genero);
+                        });
+                        
+                        genreContainer.appendChild(button);
+                    });
+                })
+                .catch(error => {
+                    console.error("Error en la solicitud de géneros:", error);
+                });
+        }
+
+        // 2) Cargar álbumes desde la API
+        function loadAlbums() {
+            fetch("api.php?action=getAlbums")
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        showErrorMessage("Error al cargar los álbumes");
+                        return;
+                    }
+
+                    allAlbums = data.albums;
+                    console.log("Álbumes cargados:", allAlbums.length);
+                    
+                    // Mostrar todos los álbumes inicialmente
+                    displayAlbums(allAlbums);
+                })
+                .catch(error => {
+                    console.error("Error en la solicitud de álbumes:", error);
+                    showErrorMessage("Error de conexión. Intente más tarde.");
+                });
+        }
+
+        // 3) Filtrar álbumes por género
+        function filterAlbumsByGenre(genero) {
+            currentGenre = genero;
+            
+            let filteredAlbums;
+            if (genero === "Todos") {
+                filteredAlbums = allAlbums;
+            } else {
+                filteredAlbums = allAlbums.filter(album => album.genero_album === genero);
+            }
+            
+            displayAlbums(filteredAlbums);
+        }
+
+        // Función para abrir la página de canciones
+function openAlbumDetails(album, startImage) {
+    // Guardar los datos del álbum en localStorage
+    localStorage.setItem('selectedAlbum', JSON.stringify({
+        id: album.id_album,
+        titulo: album.titulo,
+        artista: album.nombre_artista,
+        anio: album.anio,
+        descripcion: album.descripcion_album,
+        genero: album.genero_album,
+        temas: album.cantidadtemas,
+        duracion: album.duracion_total,
+        images: {
+            mainImage: `images/${startImage}.png`,
+            thumbnails: [
+                `images/${startImage}.png`,
+                `images/${startImage + 1}.png`,
+                `images/${startImage + 2}.png`,
+                `images/${startImage + 3}.png`
+            ]
+        }
+    }));
+    
+    // Navegar a canciones.html
+    window.location.href = 'canciones.html';
+}
+
+// En la función displayAlbums() de albumes.html, MODIFICA la parte donde creas cada tarjeta:
+function displayAlbums(albums) {
+    const tbody = document.getElementById('albumBody');
+    
+    if (albums.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" style="text-align:center; padding:40px; color:#666;">
+                    No hay álbumes disponibles ${currentGenre !== "Todos" ? `para el género "${currentGenre}"` : ""}
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = "";
+    
+    const albumsPerRow = 3;
+    let currentRow;
+    
+    albums.forEach((album, index) => {
+        // Crear nueva fila cada 3 álbumes
+        if (index % albumsPerRow === 0) {
+            currentRow = document.createElement('tr');
+            tbody.appendChild(currentRow);
+        }
+
+        // Obtener imágenes para este álbum
+        const images = getAlbumImages(album.id_album);
+        const startImage = (album.id_album - 1) * 4 + 1;
+        
+        // Crear HTML de miniaturas
+        let thumbsHTML = "";
+        images.thumbnails.forEach((imgSrc, i) => {
+            thumbsHTML += `
+                <td>
+                    <img class="thumb" 
+                         src="${imgSrc}" 
+                         alt="${album.titulo} - Imagen ${i + 1}"
+                         onerror="this.onerror=null; this.src='images/placeholder.png'">
+                </td>
+            `;
+        });
+
+        // Crear celda del álbum - AGREGAR clase 'album-clickable'
+        const cell = document.createElement('td');
+        cell.innerHTML = `
+            <div class="product-card album-clickable" data-album-id="${album.id_album}">
+                <div class="product-header">
+                    <figure class="product-image">
+                        <img src="${images.mainImage}" 
+                             alt="${album.titulo}"
+                             onerror="this.onerror=null; this.src='images/placeholder.png'">
+                    </figure>
+                    <div class="product-title-info">
+                        <h3 class="product-name">${album.titulo}</h3>
+                        <div class="product-artist">${album.nombre_artista}</div>
+                    </div>
+                </div>
+
+                <p class="product-description">${album.descripcion_album}</p>
+
+                <div class="product-meta-row">
+                    <span class="meta-item year">${album.anio}</span>
+                    <span class="meta-item tracks">${album.cantidadtemas} temas</span>
+                    <span class="meta-item price">$599 MXN</span>
+                </div>
+
+                <div class="product-thumbs-row">
+                    <table class="thumbs"><tr>${thumbsHTML}</tr></table>
+                </div>
+
+                <div class="product-action-row">
+                    <button class="buy-btn" data-id="${album.id_album}">Agregar al carrito</button>
+                </div>
+            </div>
+        `;
+
+        // Hacer clic en la tarjeta para abrir detalles
+        const productCard = cell.querySelector('.product-card');
+        productCard.addEventListener('click', function(e) {
+            // Evitar que se active cuando se hace clic en botones internos
+            if (e.target.classList.contains('buy-btn') || 
+                e.target.classList.contains('thumb')) {
+                return;
+            }
+            openAlbumDetails(album, startImage);
+        });
+        
+        // Cambiar cursor para indicar que es clickeable
+        productCard.style.cursor = 'pointer';
+        productCard.style.transition = 'transform 0.2s';
+        productCard.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+        });
+        productCard.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+        });
+
+        currentRow.appendChild(cell);
+
+        // Si es el último álbum y la fila no está completa, agregar celdas vacías
+        if (index === albums.length - 1) {
+            const remainingCells = albumsPerRow - (index % albumsPerRow) - 1;
+            for (let i = 0; i < remainingCells; i++) {
+                const emptyCell = document.createElement('td');
+                currentRow.appendChild(emptyCell);
+            }
+        }
+    });
+
+    // Agregar event listeners a los botones de compra
+    setTimeout(() => {
+        document.querySelectorAll('.buy-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation(); // Evitar que el clic se propague al álbum
+                const albumId = this.getAttribute('data-id');
+                addToCart(albumId);
+            });
+        });
+    }, 100);
+}
+
+        // 5) Función para agregar al carrito
+        function addToCart(albumId) {
+            // Aquí implementarías la lógica del carrito
+            alert(`Álbum ${albumId} agregado al carrito`);
+            
+            // Ejemplo con localStorage:
+            // let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            // cart.push(albumId);
+            // localStorage.setItem('cart', JSON.stringify(cart));
+        }
+
+        // 6) Función para mostrar mensajes de error
+        function showErrorMessage(message) {
+            const tbody = document.getElementById('albumBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:center; padding:40px; color:#8b0000;">
+                        ${message}
+                    </td>
+                </tr>
+            `;
+        }
+
+        // 7) Inicializar todo cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar géneros y álbumes
+            loadGenres();
+            loadAlbums();
+
+            // Configurar evento para el botón "Todos"
+            const allButton = document.querySelector('.genre-btn[data-genre="Todos"]');
+            if (allButton) {
+                allButton.addEventListener('click', () => {
+                    filterAlbumsByGenre("Todos");
+                });
+            }
+        });
+
+    </script>
+
+    <!-- Script principal para la sidebar y otros componentes -->
     <script src="main.js"></script>
 </body>
 </html>

@@ -12,8 +12,11 @@ function saveSession(userData) {
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("userEmail", userData.email);
     localStorage.setItem("userRole", userData.role);
+    localStorage.setItem("userName", userData.name); // AHORA SÍ existe
     localStorage.setItem("loginTime", new Date().toISOString());
 }
+
+
 
 function clearSession() {
     localStorage.removeItem("isLoggedIn");
@@ -28,40 +31,41 @@ function checkSession() {
 
 function getUserData() {
     if (!checkSession()) return null;
-    
+
     return {
         email: localStorage.getItem("userEmail"),
         role: localStorage.getItem("userRole"),
+        name: localStorage.getItem("userName"), // ➜ NUEVO
         loginTime: localStorage.getItem("loginTime")
     };
 }
 
 function protectPage(allowedRoles = []) {
     const currentPage = window.location.pathname.split('/').pop();
-    
-    // Páginas que NO requieren login
     const publicPages = ['login.html', 'register.html', 'cperdida.html'];
     
+    // Si estamos en página pública, no hacer nada (el login ya maneja redirección)
     if (publicPages.includes(currentPage)) {
-        // Si ya está logueado y está en login/register, redirigir
-        if (checkSession()) {
-            const user = getUserData();
-            window.location.href = user.role === "admin" ? "admin.html" : "index.html";
-            return false;
-        }
         return true;
     }
     
-    // Para otras páginas, verificar login
+    // Para páginas protegidas
     if (!checkSession()) {
-        window.location.href = "login.html";
+        // Solo redirigir si no estamos ya en login
+        if (currentPage !== 'login.html') {
+            window.location.href = "login.html";
+        }
         return false;
     }
     
     const user = getUserData();
     
     if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-        window.location.href = user.role === "admin" ? "admin.html" : "index.html";
+        // Si no tiene permiso, redirigir según su rol
+        const targetPage = user.role === "admin" ? "admin.html" : "index.html";
+        if (currentPage !== targetPage) {
+            window.location.href = targetPage;
+        }
         return false;
     }
     
@@ -201,72 +205,51 @@ function setupRegister() {
 }
 
 // ==================== LOGIN ====================
+// ==================== LOGIN ====================
 function setupLogin() {
     const loginForm = document.getElementById("loginForm");
     if (!loginForm) return;
 
-    // Si ya está logueado, redirigir
-    if (checkSession()) {
-        const user = getUserData();
-        window.location.href = user.role === "admin" ? "admin.html" : "index.html";
-        return;
-    }
-
-    loginForm.addEventListener("submit", function (e) {
+    // NO redirigir aquí - la función protectPage() ya lo hará si es necesario
+    // Solo configurar el evento del formulario
+    
+    loginForm.addEventListener("submit", async function(e) {
         e.preventDefault();
 
         const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value.trim();
 
-        // Credenciales por defecto
-        const adminEmail = "admin@music.com";
-        const adminPass = "Admin123!";
-        const userEmail = "user@music.com";
-        const userPass = "User123!";
+        try {
+            const response = await fetch("api.php?action=login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
 
-        // Verificar usuarios registrados
-        const users = JSON.parse(localStorage.getItem("users") || "[]");
-        const registeredUser = users.find(u => {
-            try {
-                return u.email === email && atob(u.password) === password;
-            } catch {
-                return false;
+            const data = await response.json();
+            console.log("RESPUESTA PHP:", data);
+
+            if (!data.success) {
+                alert(data.message || "Correo o contraseña incorrectos");
+                return;
             }
-        });
 
-        let loginSuccess = false;
-        let userData = {};
+            // Guardar sesión
+            saveSession({ 
+                email: data.user.email, 
+                role: data.user.role,
+                name: data.user.nombre + " " + data.user.apellido 
+            });
 
-        if (email === adminEmail && password === adminPass) {
-            loginSuccess = true;
-            userData = { email: adminEmail, role: "admin" };
-        } 
-        else if (email === userEmail && password === userPass) {
-            loginSuccess = true;
-            userData = { email: userEmail, role: "user" };
-        }
-        else if (registeredUser) {
-            loginSuccess = true;
-            userData = { 
-                email: registeredUser.email, 
-                role: registeredUser.role || "user" 
-            };
-        }
+            // Redirigir
+            window.location.href = data.user.role === "admin" ? "admin.html" : "index.html";
 
-        if (loginSuccess) {
-            saveSession(userData);
-            console.log("Login exitoso:", userData);
-            
-            setTimeout(() => {
-                window.location.href = userData.role === "admin" ? "admin.html" : "index.html";
-            }, 500);
-        } else {
-            alert("Correo o contraseña incorrectos");
-            document.getElementById("password").value = "";
+        } catch (err) {
+            console.error(err);
+            alert("Error conectando con el servidor.");
         }
     });
 }
-
 // ==================== LOGOUT ====================
 function logoutUser() {
     if (isLoggingOut) return;
@@ -294,75 +277,64 @@ function logoutUser() {
 function setupUserDropdown() {
     const userBtn = document.querySelector('.user-btn');
     const userDropdown = document.querySelector('.user-dropdown');
-    
+
     if (!userBtn || !userDropdown) return;
-    
-    // Mostrar info del usuario
+
+    // ============================
+    // 1. MOSTRAR NOMBRE Y CORREO
+    // ============================
     const user = getUserData();
     if (user) {
+        const nameDisplay = document.getElementById('userNameDisplay');
         const emailDisplay = document.getElementById('userEmailDisplay');
-        const roleDisplay = document.getElementById('userRoleDisplay');
-        
-        if (emailDisplay) emailDisplay.textContent = user.email.split('@')[0];
-        if (roleDisplay) roleDisplay.textContent = user.role === 'admin' ? 'Administrador' : 'Usuario';
+
+        if (nameDisplay) nameDisplay.textContent = user.name;
+        if (emailDisplay) emailDisplay.textContent = user.email;
     }
-    
+
+    // ============================
+    // 2. COMPORTAMIENTO DEL DROPDOWN
+    // ============================
     let openTimer = null;
     let closeTimer = null;
-    
+
+    // Abrir con leve retraso
     userBtn.addEventListener('mouseenter', () => {
-        if (openTimer) clearTimeout(openTimer);
+        if (closeTimer) clearTimeout(closeTimer);
+
         openTimer = setTimeout(() => {
-            if (!userDropdown.classList.contains('active')) {
-                userDropdown.classList.add('active');
-            }
-        }, 300);
+            userDropdown.classList.add('active');
+        }, 200);
     });
-    
+
+    // Iniciar cierre
     userBtn.addEventListener('mouseleave', () => {
         if (openTimer) clearTimeout(openTimer);
-        openTimer = null;
-        
-        setTimeout(() => {
+
+        closeTimer = setTimeout(() => {
             if (!userDropdown.matches(':hover')) {
-                closeTimer = setTimeout(() => {
-                    userDropdown.classList.remove('active');
-                    closeTimer = null;
-                }, 3000);
+                userDropdown.classList.remove('active');
             }
-        }, 100);
+        }, 2500);
     });
-    
+
+    // Mantener abierto si el mouse está dentro
     userDropdown.addEventListener('mouseenter', () => {
         if (closeTimer) clearTimeout(closeTimer);
-        closeTimer = null;
     });
-    
+
+    // Cerrar al salir
     userDropdown.addEventListener('mouseleave', () => {
-        setTimeout(() => {
+        closeTimer = setTimeout(() => {
             if (!userBtn.matches(':hover')) {
-                closeTimer = setTimeout(() => {
-                    userDropdown.classList.remove('active');
-                    closeTimer = null;
-                }, 3000);
+                userDropdown.classList.remove('active');
             }
-        }, 50);
+        }, 2500);
     });
-    
-    userBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        userDropdown.classList.toggle('active');
-    });
-    
-    document.addEventListener('click', (e) => {
-        if (userDropdown.classList.contains('active') &&
-            !userDropdown.contains(e.target) && 
-            !userBtn.contains(e.target)) {
-            userDropdown.classList.remove('active');
-        }
-    });
-    
-    // Botón de logout en dropdown
+
+    // ============================
+    // 3. BOTÓN DE LOGOUT
+    // ============================
     const logoutBtn = document.getElementById('logoutBtnDropdown');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
@@ -487,36 +459,43 @@ function setupDefaultUsers() {
 }
 
 // ==================== INICIALIZACIÓN PRINCIPAL ====================
+// ==================== INICIALIZACIÓN PRINCIPAL ====================
 function initializeApp() {
     if (isInitialized) return;
     isInitialized = true;
     
     console.log("Inicializando aplicación...");
     
-    // Verificar protección de páginas
-    const currentPage = window.location.pathname.split('/').pop();
-    
-    if (currentPage === 'admin.html') {
-        protectPage(['admin']);
-    } else if (!['login.html', 'register.html', 'cperdida.html'].includes(currentPage)) {
-        protectPage(['user', 'admin']);
-    }
-    
     // Configurar usuarios por defecto
     setupDefaultUsers();
     
-    // Configurar componentes específicos
+    // Primero configurar componentes, luego verificar protección
     setupSidebar();
     setupRegister();
-    setupLogin();
+    setupLogin();  // ¡Esta función ya maneja redirección si hay sesión!
     setupUserDropdown();
     setupAdminLogout();
     setupCatalog();
     
     // Imágenes
     handleImageErrors();
+    
+    // Solo llamar protectPage() si NO estamos en páginas públicas
+    const currentPage = window.location.pathname.split('/').pop();
+    const publicPages = ['login.html', 'register.html', 'cperdida.html'];
+    
+    // Si NO estamos en una página pública, verificar protección
+    if (!publicPages.includes(currentPage)) {
+        // Para admin.html
+        if (currentPage === 'admin.html') {
+            protectPage(['admin']);
+        } 
+        // Para otras páginas protegidas (index.html, albumes.html, etc.)
+        else {
+            protectPage(['user', 'admin']);
+        }
+    }
 }
-
 // ==================== EJECUCIÓN ====================
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeApp);

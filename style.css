@@ -280,9 +280,8 @@ table.catalog td .product-card {
 .product-image img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.3s ease;
+    object-fit: contain;   /* << AQUÍ EL CAMBIO */
+    background: #fff;
 }
 
 .product-image:hover img {
@@ -418,8 +417,9 @@ table.catalog td .product-card {
 .thumb img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
 }
+
 
 /* FILA 5: BOTÓN AGREGAR AL CARRITO */
 .product-action-row {
@@ -1086,4 +1086,411 @@ table.catalog td .product-card {
     height: 100%;
     display: flex;
     flex-direction: column;
+}
+
+/* Estilos para la página de canciones */
+.album-clickable {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.album-clickable:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.album-clickable::after {
+    content: "🔍 Ver detalles";
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 12px;
+    color: #8b0000;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.album-clickable:hover::after {
+    opacity: 1;
+}
+
+/* Estilos para la página de detalles del álbum */
+.back-btn {
+    padding: 8px 16px;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.back-btn:hover {
+    background: #e9e9e9;
+}
+
+.album-details-container {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-top: 20px;
+}
+
+.album-header {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+}
+
+.album-cover {
+    flex: 0 0 300px;
+}
+
+.album-cover img {
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.album-info {
+    flex: 1;
+    min-width: 300px;
+}
+
+.album-info h1 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 32px;
+}
+
+.album-meta {
+    display: flex;
+    gap: 15px;
+    margin: 15px 0;
+    flex-wrap: wrap;
+}
+
+.album-meta .meta-item {
+    padding: 5px 10px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.album-description {
+    line-height: 1.6;
+    color: #666;
+    margin: 20px 0;
+    font-size: 16px;
+}
+
+.album-price {
+    font-size: 24px;
+    font-weight: bold;
+    color: #8b0000;
+    margin: 20px 0;
+}
+
+.album-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.rating-section {
+    margin: 40px 0;
+    padding: 25px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.rating-section h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+/* ESTRELLAS SIMPLES Y EFECTIVAS */
+.rating-stars {
+    font-size: 46px;
+    margin: 20px 0;
+    cursor: pointer;
+    display: flex;
+    gap: 5px;
+}
+
+.rating-stars .star {
+    font-size: 50px;
+    cursor: pointer;
+    color: #ccc !important; /* GRIS por defecto */
+    transition: all 0.2s;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* IMPORTANTE: Sobrescribir cualquier estilo conflictivo */
+.rating-stars .star[style*="color"] {
+    color: inherit !important;
+}
+
+/* Estrella dorada cuando está activa */
+.rating-stars .star.selected,
+.rating-stars .star.hover,
+.rating-stars:hover .star {
+    color: #ffd700 !important; /* AMARILLO DORADO */
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* Efecto hover */
+.rating-stars .star:hover {
+    transform: scale(1.2);
+    color: #ffcc00 !important; /* AMARILLO MÁS BRILLANTE */
+}
+
+.rating-display {
+    font-size: 18px;
+    margin: 10px 0 20px 0;
+}
+
+.rating-display #currentRating {
+    font-weight: bold;
+    color: #8b0000;
+    font-size: 22px;
+}
+
+.submit-rating-btn {
+    padding: 10px 25px;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+.submit-rating-btn:hover {
+    background: #8b0000;
+}
+
+.songs-section {
+    margin-top: 50px;
+}
+
+.songs-section h3 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 24px;
+    border-bottom: 2px solid #8b0000;
+    padding-bottom: 10px;
+}
+
+.songs-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.song-item {
+    border-bottom: 1px solid #eee;
+    transition: background 0.2s;
+}
+
+.song-item:hover {
+    background: #f9f9f9;
+}
+
+.song-item:last-child {
+    border-bottom: none;
+}
+
+.song-number {
+    width: 60px;
+    text-align: center;
+    color: #666;
+    padding: 15px;
+    font-weight: bold;
+}
+
+.song-title {
+    padding: 15px;
+    font-weight: 500;
+    font-size: 16px;
+}
+
+.song-duration {
+    width: 80px;
+    text-align: center;
+    color: #666;
+    padding: 15px;
+    font-size: 14px;
+}
+
+.song-actions {
+    width: 140px;
+    padding: 15px;
+    text-align: center;
+}
+
+.play-btn, 
+.song-favorite-btn {
+    padding: 8px 12px;
+    margin: 0 5px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 18px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.play-btn:hover {
+    background: rgba(139, 0, 0, 0.1);
+    color: #8b0000;
+}
+
+.song-favorite-btn:hover {
+    background: rgba(255, 0, 0, 0.1);
+    color: #ff0000;
+}
+
+.error-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: #8b0000;
+    font-size: 18px;
+}
+
+.error-message h2 {
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .album-header {
+        flex-direction: column;
+    }
+    
+    .album-cover {
+        flex: none;
+        max-width: 250px;
+        margin: 0 auto 20px;
+    }
+    
+    .album-info {
+        min-width: 100%;
+    }
+    
+    .album-actions {
+        flex-direction: column;
+    }
+    
+    .buy-btn, .favorite-btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .song-title {
+        font-size: 14px;
+    }
+    
+    .song-actions {
+        width: 100px;
+    }
+}
+
+@media (max-width: 480px) {
+    .album-cover {
+        max-width: 200px;
+    }
+    
+    .album-info h1 {
+        font-size: 24px;
+    }
+    
+    .album-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .rating-stars {
+        font-size: 24px;
+    }
+    
+    .song-item {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    .song-number,
+    .song-title,
+    .song-duration,
+    .song-actions {
+        flex: 1 0 50%;
+        box-sizing: border-box;
+    }
+}
+
+/* Asegurar visibilidad del texto en canciones.html */
+.catalog-section {
+    background: white;
+    color: #333;
+}
+
+.catalog-header h2 {
+    color: #333 !important;
+}
+
+.catalog-header p {
+    color: #666 !important;
+}
+
+.album-details-container * {
+    color: #333 !important;
+}
+
+.album-info h1 {
+    color: #222 !important;
+}
+
+.album-description {
+    color: #444 !important;
+}
+
+.rating-section h3 {
+    color: #222 !important;
+}
+
+.songs-section h3 {
+    color: #222 !important;
+}
+
+.song-title {
+    color: #222 !important;
+}
+
+.song-number,
+.song-duration {
+    color: #666 !important;
+}
+
+.rating-display {
+    color: #333 !important;
+}
+
+.rating-display #currentRating {
+    color: #8b0000 !important;
 }
