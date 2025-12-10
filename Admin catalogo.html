@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <h2 class="sidebar-title">SoundSpace Admin</h2>
+        <nav class="menu">
+            <a href="index.html">📊 Dashboard</a>
+            <a href="usuarios.html">👤 Usuarios</a>
+            <a href="roles.html">🔑 Roles</a>
+            <a href="catalogo.html" class="active">🎵 Catálogo</a>
+            <a href="login.html">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+
+        <h1>Catálogo de Álbumes y Canciones</h1>
+
+        <button class="btn">➕ Agregar Álbum</button>
+        <button class="btn">➕ Agregar Canción</button>
+
+        <h2 style="margin-top:25px;">Álbumes</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Álbum</th>
+                    <th>Artista</th>
+                    <th>Año</th>
+                    <th>Precio</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>3</td>
+                    <td>Time Out</td>
+                    <td>Morat</td>
+                    <td>2016</td>
+                    <td>$150</td>
+                    <td>
+                        <button class="edit">Editar</button>
+                        <button class="delete">Eliminar</button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>9</td>
+                    <td>emails i can't send</td>
+                    <td>Sabrina Carpenter</td>
+                    <td>2023</td>
+                    <td>$180</td>
+                    <td>
+                        <button class="edit">Editar</button>
+                        <button class="delete">Eliminar</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+
+        <h2 style="margin-top:25px;">Canciones</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Canción</th>
+                    <th>Álbum</th>
+                    <th>Duración</th>
+                    <th>Precio</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>17</td>
+                    <td>Cómo te atreves</td>
+                    <td>Time Out</td>
+                    <td>3:40</td>
+                    <td>$20</td>
+                    <td>
+                        <button class="edit">Editar</button>
+                        <button class="delete">Eliminar</button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>65</td>
+                    <td>Nonsense</td>
+                    <td>emails i can't send</td>
+                    <td>2:35</td>
+                    <td>$25</td>
+                    <td>
+                        <button class="edit">Editar</button>
+                        <button class="delete">Eliminar</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+    </main>
+
+</body>
+</html>
