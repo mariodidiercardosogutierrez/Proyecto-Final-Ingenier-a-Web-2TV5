@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <aside class="sidebar">
+        <h2 class="sidebar-title">SoundSpace Admin</h2>
+        <nav class="menu">
+            <a href="index.html">📊 Dashboard</a>
+            <a href="usuarios.html" class="active">👤 Usuarios</a>
+            <a href="roles.html">🔑 Roles</a>
+            <a href="catalogo.html">🎵 Catálogo</a>
+            <a href="login.html">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+
+        <h1>Gestión de Usuarios</h1>
+        
+        <button class="btn">➕ Nuevo Usuario</button>
+
+        <table class="table" style="margin-top: 25px;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Mauricio Ramos</td>
+                    <td>mau@soundspace.com</td>
+                    <td>Administrador</td>
+                    <td>
+                        <button class="edit">Editar</button>
+                        <button class="delete">Eliminar</button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>2</td>
+                    <td>Daniel Ruiz</td>
+                    <td>druiz@soundspace.com</td>
+                    <td>Editor</td>
+                    <td>
+                        <button class="edit">Editar</button>
+                        <button class="delete">Eliminar</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+    </main>
+
+</body>
+</html>
