@@ -1,0 +1,250 @@
+BD REAL
+
+CREATE TABLE Artista (
+    id_artista INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_artista VARCHAR(40) NOT NULL,
+    correo VARCHAR(50),
+    contrasenia VARCHAR(60)
+) ENGINE=InnoDB;
+
+CREATE TABLE usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    apellido VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    telefono VARCHAR(10) NOT NULL,
+    fecha_nac DATE NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'user',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login DATETIME,
+    UNIQUE KEY (email)
+) ENGINE=InnoDB;
+
+CREATE TABLE Album (
+    id_album INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(150) NOT NULL,
+    anio INT NOT NULL,
+    id_artista INT NOT NULL,
+    duracion_total INT DEFAULT 0,
+    descripcion_album VARCHAR(300) NOT NULL,
+    genero_album VARCHAR(100) NOT NULL,
+    cantidadtemas INT NOT NULL,
+    precio DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (id_artista) REFERENCES Artista(id_artista)
+) ENGINE=InnoDB;
+
+CREATE TABLE Cancion (
+    id_cancion INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(50) NOT NULL,
+    duracion TIME NOT NULL,
+    anio INT NOT NULL,
+    fecha_subida DATETIME NOT NULL,
+    genero VARCHAR(20),
+    precio FLOAT NOT NULL,
+    id_artista INT NOT NULL,
+    id_album INT NOT NULL,
+    FOREIGN KEY (id_artista) REFERENCES Artista(id_artista),
+    FOREIGN KEY (id_album) REFERENCES Album(id_album)
+) ENGINE=InnoDB;
+
+CREATE TABLE Carrito (
+    id_carrito INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE CarritoItem (
+    id_carritoItem INT AUTO_INCREMENT PRIMARY KEY,
+    id_carrito INT NOT NULL,
+    tipo VARCHAR(10) NOT NULL,  -- album / cancion
+    id_producto INT NOT NULL,
+    cantidad INT NOT NULL,
+    precio FLOAT NOT NULL,
+    FOREIGN KEY (id_carrito) REFERENCES Carrito(id_carrito)
+) ENGINE=InnoDB;
+
+CREATE TABLE Estatus_Compra (
+    id_estatus INT AUTO_INCREMENT PRIMARY KEY,
+    estatus VARCHAR(20) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE Tarjeta (
+    id_tarjeta INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_titular VARCHAR(60) NOT NULL,
+    numero_tarjeta VARCHAR(20) NOT NULL,
+    mes_exp VARCHAR(2) NOT NULL,
+    anio_exp VARCHAR(4) NOT NULL,
+    cvv VARCHAR(4) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE Compra (
+    id_compra INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    fecha DATETIME NOT NULL,
+    total FLOAT NOT NULL,
+    id_tarjeta INT NOT NULL,
+    id_estatus INT NOT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id),
+    FOREIGN KEY (id_tarjeta) REFERENCES Tarjeta(id_tarjeta),
+    FOREIGN KEY (id_estatus) REFERENCES Estatus_Compra(id_estatus)
+) ENGINE=InnoDB;
+
+CREATE TABLE CompraItem (
+    id_compraItem INT AUTO_INCREMENT PRIMARY KEY,
+    id_compra INT NOT NULL,
+    tipo VARCHAR(10) NOT NULL,  -- album / cancion
+    id_producto INT NOT NULL,
+    cantidad INT NOT NULL,
+    precio FLOAT NOT NULL,
+    FOREIGN KEY (id_compra) REFERENCES Compra(id_compra)
+) ENGINE=InnoDB;
+
+CREATE TABLE AlbumCalificacion (
+    id_album_calificacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_album INT NOT NULL,
+    calificacion TINYINT NOT NULL,
+    fecha_calificacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (id_usuario, id_album),
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id),
+    FOREIGN KEY (id_album) REFERENCES Album(id_album)
+) ENGINE=InnoDB;
+
+CREATE TABLE AlbumFavorito (
+    id_album_favorito INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_album INT NOT NULL,
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (id_usuario, id_album),
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id),
+    FOREIGN KEY (id_album) REFERENCES Album(id_album)
+) ENGINE=InnoDB;
+
+
+
+INSERT INTO Artista (nombre_artista, correo, contrasenia) VALUES
+('Bad Bunny', 'badbunny@gmail.com', '123'),
+('Rauw Alejandro','rarauw@gmail.com' , '124'),
+('Morat', 'Morat@gmail.com', '125'),
+('Juan Gabriel', 'JuanG@gmail.com', '126'),
+('Luis Miguel' , 'LuisMiguel@gmail.com', '127'),
+('AC/DC', 'ACDCOFICIAL@gmail.com', '128'),
+('Manuel Medrano','ManuelM@gmail.com','129'),
+('Sabrina Carpenter', 'SabrinaC@gmail.com','130');
+
+INSERT INTO Album (titulo, anio, id_artista, duracion_total, descripcion_album, genero_album, cantidadtemas, precio) VALUES
+('DTMF', 2025, 1, 0, 'Álbum de Bad Bunny', 'Reguetón', 8, 600.00),
+('Cosa Nuestra', 2024, 2, 0, 'Álbum de Rauw Alejandro', 'Pop', 8, 600.00),
+('Time Out', 2016, 3, 0, 'Álbum de Morat', 'Pop', 8, 600.00),
+('Un Verano Sin Ti', 2022, 1, 0, 'Álbum de Bad Bunny', 'Urbano', 8, 600.00),
+('Mis 40 en Bellas Artes', 2015, 4, 0, 'Álbum de Juan Gabriel', 'Balada', 8, 600.00),
+('20 Años', 1990, 5, 0, 'Álbum de Luis Miguel', 'Pop', 8, 600.00),
+('The Razors Edge', 1990, 6, 0, 'Álbum de AC/DC', 'Rock', 8, 600.00),
+('Eterno', 2021, 7, 0, 'Álbum de Manuel Medrano', 'Pop', 8, 600.00),
+('emails i can’t send', 2023, 8, 0, 'Álbum de Sabrina Carpenter', 'Pop', 8, 600.00);
+
+
+INSERT INTO Cancion (titulo, duracion, anio, fecha_subida, genero, precio, id_artista, id_album) VALUES
+-- ÁLBUM 1 DTMF
+('DtMF', '00:03:57', 2025, NOW(), 'Regueton', 15, 1, 1),
+('NuevaYol', '00:03:03', 2025, NOW(), 'Regueton', 15, 1, 1),
+('EoO', '00:03:24', 2025, NOW(), 'Regueton', 15, 1, 1),
+('WELTiTA','00:03:07', 2025, NOW(), 'Regueton', 15, 1, 1),
+('VelDA','00:03:54', 2025, NOW(), 'Regueton', 15, 1, 1),
+('EL CLuB','00:03:41', 2025, NOW(), 'Regueton', 15, 1, 1),
+('BOKeTE','00:03:35', 2025, NOW(), 'Regueton', 15, 1, 1),
+('TURiSTA','00:03:09', 2025, NOW(), 'Regueton', 15, 1, 1),
+
+
+('Tu CON EL','00:04:49',2024,NOW(),'Pop',14,2,2),
+('2:12 AM','00:03:31',2024,NOW(),'Pop',14,2,2),
+('Mil Mujeres','00:02:48',2024,NOW(),'Pop',14,2,2),
+('Cosa Nuestra','00:04:20',2024,NOW(),'Pop',14,2,2),
+('Que pasaria','00:03:10',2024,NOW(),'Pop',14,2,2),
+('Commited','00:02:38',2024,NOW(),'Pop',14,2,2),
+('Espresso Martini','00:03:11',2024,NOW(),'Pop',14,2,2),
+('Ni Me Conozco','00:03:49',2024,NOW(),'Pop',14,2,2),
+
+
+('Cuánto Me Duele','00:03:15',2016,NOW(),'Pop',15,3,3),
+('Yo Más Te Adoro','00:03:51',2016,NOW(),'Pop',15,3,3),
+('Sé Que Te Duele','00:03:30',2016,NOW(),'Pop',15,3,3),
+('Mi Nuevo Vicio','00:03:23',2016,NOW(),'Pop',15,3,3),
+('Cómo Te Atreves','00:03:45',2016,NOW(),'Pop',15,3,3),
+('Aprender a Quererte','00:03:49',2016,NOW(),'Pop',15,3,3),
+('En un Solo Día','00:03:21',2016,NOW(),'Pop',15,3,3),
+('La Última Vez','00:03:33',2016,NOW(),'Pop',15,3,3),
+
+
+('Moscow Mule','00:03:47',2022,NOW(),'Urbano',16,1,4),
+('Después de la Playa','00:03:50',2022,NOW(),'Urbano',16,1,4),
+('Me Porto Bonito','00:02:58',2022,NOW(),'Urbano',16,1,4),
+('Titi Me Preguntó','00:04:02',2022,NOW(),'Urbano',16,1,4),
+('Un Ratito','00:02:55',2022,NOW(),'Urbano',16,1,4),
+('Party','00:03:47',2022,NOW(),'Urbano',16,1,4),
+('Tarot','00:03:57',2022,NOW(),'Urbano',16,1,4),
+('Ojitos Lindos','00:04:18',2022,NOW(),'Urbano',16,1,4),
+
+
+('Así Fue','00:05:11',2014,NOW(),'Balada',18,4,5),
+('Querida','00:04:40',2014,NOW(),'Balada',18,4,5),
+('Amor Eterno','00:06:42',2014,NOW(),'Balada',18,4,5),
+('Hasta Que Te Conocí','00:04:50',2014,NOW(),'Balada',18,4,5),
+('Costumbres','00:04:18',2014,NOW(),'Balada',18,4,5),
+('Te Lo Pido Por Favor','00:04:03',2014,NOW(),'Balada',18,4,5),
+('Noa Noa','00:04:12',2014,NOW(),'Balada',18,4,5),
+('Se Me Olvidó Otra Vez','00:03:30',2014,NOW(),'Balada',18,4,5),
+
+
+('Soy Como Quiero Ser','00:03:21',1987,NOW(),'Pop',12,5,6),
+('Ahora Te Puedes Marchar','00:03:13',1987,NOW(),'Pop',12,5,6),
+('Eres Tú','00:04:04',1987,NOW(),'Pop',12,5,6),
+('Yo Que No Vivo Sin Ti','00:03:26',1987,NOW(),'Pop',12,5,6),
+('Rey de Corazones','00:03:49',1987,NOW(),'Pop',12,5,6),
+('Jimmy Jimmy','00:03:48',1987,NOW(),'Pop',12,5,6),
+('Tú Me Quemas','00:03:35',1987,NOW(),'Pop',12,5,6),
+('Es Mejor','00:03:30',1987,NOW(),'Pop',12,5,6),
+
+
+('Thunderstruck','00:04:52',1990,NOW(),'Rock',17,6,7),
+('Fire Your Guns','00:02:54',1990,NOW(),'Rock',17,6,7),
+('Moneytalks','00:03:46',1990,NOW(),'Rock',17,6,7),
+('The Razors Edge','00:04:22',1990,NOW(),'Rock',17,6,7),
+('Mistress for Christmas','00:03:59',1990,NOW(),'Rock',17,6,7),
+('Rock Your Heart Out','00:04:07',1990,NOW(),'Rock',17,6,7),
+('Are You Ready','00:04:10',1990,NOW(),'Rock',17,6,7),
+('Got You by the Balls','00:04:28',1990,NOW(),'Rock',17,6,7);
+
+
+INSERT INTO Cancion (titulo, duracion, anio, fecha_subida, genero, precio, id_artista, id_album) VALUES
+('La Distancia','00:03:55',2021,NOW(),'Pop',14,7,8),
+('Nenita','00:03:12',2021,NOW(),'Pop',14,7,8),
+('Café','00:03:18',2021,NOW(),'Pop',14,7,8),
+('Este Cuento','00:03:42',2021,NOW(),'Pop',14,7,8),
+('Fin de Semana','00:02:59',2021,NOW(),'Pop',14,7,8),
+('Dime Qué Hago','00:03:26',2021,NOW(),'Pop',14,7,8),
+('Prende la Luz','00:03:01',2021,NOW(),'Pop',14,7,8),
+('Mi Otra Mitad','00:03:47',2021,NOW(),'Pop',14,7,8);
+
+
+INSERT INTO Cancion (titulo, duracion, anio, fecha_subida, genero, precio, id_artista, id_album) VALUES
+('emails i cant send','00:02:27',2023,NOW(),'Pop',16,8,9),
+('Vicious','00:02:56',2023,NOW(),'Pop',16,8,9),
+('Read Your Mind','00:02:38',2023,NOW(),'Pop',16,8,9),
+('because i liked a boy','00:03:18',2023,NOW(),'Pop',16,8,9),
+('Already Over','00:02:20',2023,NOW(),'Pop',16,8,9),
+('Skinny Dipping','00:03:04',2023,NOW(),'Pop',16,8,9),
+('Fast Times','00:02:56',2023,NOW(),'Pop',16,8,9),
+('Nonsense','00:02:43',2023,NOW(),'Pop',16,8,9);
+
+
+INSERT INTO Estatus_Compra (estatus) VALUES
+('Pendiente'),
+('Pagado'),
+('Cancelado');
+
+INSERT INTO Tarjeta (nombre_titular, numero_tarjeta, mes_exp, anio_exp, cvv) VALUES
+('Mauricio Ramos', '4111111111111111', '08', '2029', '123');
+
+
