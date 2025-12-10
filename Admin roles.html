@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roles y Permisos</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <aside class="sidebar">
+        <h2 class="sidebar-title">SoundSpace Admin</h2>
+        <nav class="menu">
+            <a href="index.html">📊 Dashboard</a>
+            <a href="usuarios.html">👤 Usuarios</a>
+            <a href="roles.html" class="active">🔑 Roles</a>
+            <a href="catalogo.html">🎵 Catálogo</a>
+            <a href="login.html">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+
+        <h1>Roles y Permisos</h1>
+        <p>Define los niveles de acceso para los usuarios.</p>
+
+        <button class="btn" style="margin-top: 15px;">➕ Crear Nuevo Rol</button>
+
+        <table class="table" style="margin-top: 25px;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre del Rol</th>
+                    <th>Descripción</th>
+                    <th>Usuarios Asignados</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><strong>Administrador</strong></td>
+                    <td>Acceso total a todo el sistema.</td>
+                    <td>2</td>
+                    <td>
+                        <button class="edit">Editar</button>
+                        </td>
+                </tr>
+
+                <tr>
+                    <td>2</td>
+                    <td><strong>Editor</strong></td>
+                    <td>Puede modificar el catálogo y ver usuarios.</td>
+                    <td>5</td>
+                    <td>
+                        <button class="edit">Editar</button>
+                        <button class="delete">Eliminar</button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>3</td>
+                    <td><strong>Usuario</strong></td>
+                    <td>Solo puede ver el catálogo y comprar.</td>
+                    <td>150</td>
+                    <td>
+                        <button class="edit">Editar</button>
+                        <button class="delete">Eliminar</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+    </main>
+
+</body>
+</html>
