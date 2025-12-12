@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundSpace - Mis Favoritos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- BOTÓN QUE MUESTRA LA SIDEBAR -->
+    <button id="showSidebarBtn" class="show-sidebar-btn">➕</button>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <button class="sidebar-hide-btn">🗕</button>
+        </div>
+
+        <nav class="menu">
+            <p class="section-title">Navegación</p>
+            <a href="index.html">Inicio</a>
+            <a href="albumes.html">Géneros</a>
+            <a href="artistas.html">Artistas</a>
+            <a href="compras.html">Mis Compras</a>
+            <a href="tarjetas.html">Tarjetas</a>
+
+            <p class="section-title">Del usuario</p>
+            <a href="biblioteca.html">Biblioteca</a>
+            <a href="favoritos.html" class="active">Favoritos</a>
+        </nav>
+    </aside>
+
+    <!-- CONTENIDO -->
+    <div class="content">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-logo">
+                <img src="images/logo.png" alt="SoundSpace">
+            </div>
+
+            <div class="icons">
+                <a href="carrito.html" class="icon-btn">🛒</a>
+
+                <div class="user-dropdown">
+                    <button class="user-btn icon-btn">👤</button>
+
+                    <div class="dropdown-menu">
+                        <div class="user-info">
+                            <strong id="userNameDisplay"></strong><br>
+                            <small id="userEmailDisplay"></small>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+                        <button id="logoutBtnDropdown" class="dropdown-item logout-btn">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- SECCIÓN PRINCIPAL -->
+        <main>
+            <section class="catalog-section">
+                <div class="catalog-container">
+                    <div class="catalog-header">
+                        <h2>Mis Álbumes Favoritos</h2>
+                        <p>Álbumes que has marcado como favoritos.</p>
+                    </div>
+
+                    <!-- CONTENEDOR DINÁMICO -->
+                    <table class="catalog" id="favoritesTable">
+                        <tbody id="favoritesBody">
+                            <tr>
+                                <td colspan="3" style="text-align:center; padding:40px;">
+                                    Cargando tus favoritos...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2025 Soundspace - Todos los derechos reservados</p>
+        </footer>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // VERIFICACIÓN DE LOGIN
+        document.addEventListener("DOMContentLoaded", function () {
+            const userId = localStorage.getItem('userId');
+            const userEmail = localStorage.getItem('userEmail');
+            
+            console.log('Verificando login en favoritos...');
+            console.log('UserID:', userId);
+            
+            // Si no hay usuario logueado, redirigir a login
+            if (!userId || !userEmail) {
+                console.log('No hay usuario logueado, redirigiendo a login...');
+                alert('Por favor, inicie sesión para ver tus favoritos');
+                window.location.href = 'login.html';
+            } else {
+                console.log('Usuario logueado:', userEmail);
+                // Mostrar información del usuario
+                document.getElementById('userNameDisplay').textContent = localStorage.getItem('userName') || 'Usuario';
+                document.getElementById('userEmailDisplay').textContent = userEmail;
+                
+                // Cargar los favoritos del usuario
+                loadUserFavorites();
+            }
+        });
+
+        // ==================== FUNCIONES DE FAVORITOS ====================
+
+        // 1) Cargar álbumes favoritos del usuario
+        async function loadUserFavorites() {
+            const userId = localStorage.getItem('userId');
+            
+            if (!userId) {
+                showErrorMessage("No se pudo identificar al usuario. Inicie sesión nuevamente.");
+                return;
+            }
+            
+            try {
+                // Primero obtener los IDs de álbumes favoritos
+                const favIdsResponse = await fetch(`api.php?action=getUserFavorites&userId=${userId}`);
+                const favIdsData = await favIdsResponse.json();
+                
+                if (!favIdsData.success) {
+                    showErrorMessage("Error al cargar tus favoritos");
+                    return;
+                }
+                
+                if (!favIdsData.albumIds || favIdsData.albumIds.length === 0) {
+                    showNoFavoritesMessage();
+                    return;
+                }
+                
+                // Obtener detalles de los álbumes favoritos
+                const albumsResponse = await fetch(`api.php?action=getAlbumsByIds&albumIds=${favIdsData.albumIds.join(',')}`);
+                const albumsData = await albumsResponse.json();
+                
+                if (!albumsData.success) {
+                    showErrorMessage("Error al cargar los álbumes favoritos");
+                    return;
+                }
+                
+                // Mostrar los álbumes
+                displayFavoriteAlbums(albumsData.albums);
+                
+            } catch (error) {
+                console.error("Error cargando favoritos:", error);
+                showErrorMessage("Error de conexión. Intente más tarde.");
+            }
+        }
+
+        // 2) Mostrar álbumes favoritos
+        function displayFavoriteAlbums(albums) {
+            const tbody = document.getElementById('favoritesBody');
+            
+            if (!albums || albums.length === 0) {
+                showNoFavoritesMessage();
+                return;
+            }
+
+            tbody.innerHTML = "";
+            
+            const albumsPerRow = 3;
+            let currentRow;
+            
+            albums.forEach((album, index) => {
+                // Crear nueva fila cada 3 álbumes
+                if (index % albumsPerRow === 0) {
+                    currentRow = document.createElement('tr');
+                    tbody.appendChild(currentRow);
+                }
+
+                // Obtener imágenes para este álbum
+                const images = getAlbumImages(album.id_album);
+                const startImage = (album.id_album - 1) * 4 + 1;
+                const precio = album.precio ? `$${album.precio} MXN` : '$599 MXN';
+                
+                // Crear HTML de miniaturas
+                let thumbsHTML = "";
+                for (let i = 0; i < 4; i++) {
+                    const imgNum = startImage + i;
+                    thumbsHTML += `
+                        <td>
+                            <img class="thumb" 
+                                 src="images/${imgNum}.png" 
+                                 alt="${album.titulo} - Imagen ${i + 1}"
+                                 onerror="this.style.display='none'">
+                        </td>
+                    `;
+                }
+
+                // Crear celda del álbum favorito
+                const cell = document.createElement('td');
+                cell.innerHTML = `
+                    <div class="product-card album-clickable favorite-item" data-album-id="${album.id_album}">
+                        <div class="favorite-badge">❤️ FAVORITO</div>
+                        
+                        <div class="product-header">
+                            <figure class="product-image">
+                                <img src="${images.mainImage}" 
+                                     alt="${album.titulo}"
+                                     onerror="this.src='images/placeholder.png'">
+                            </figure>
+                            <div class="product-title-info">
+                                <h3 class="product-name">${album.titulo}</h3>
+                                <div class="product-artist">${album.nombre_artista}</div>
+                            </div>
+                        </div>
+
+                        <p class="product-description">${album.descripcion_album}</p>
+
+                        <div class="product-meta-row">
+                            <span class="meta-item year">${album.anio}</span>
+                            <span class="meta-item tracks">${album.cantidadtemas} temas</span>
+                            <span class="meta-item price">${precio}</span>
+                        </div>
+
+                        <div class="product-thumbs-row">
+                            <table class="thumbs"><tr>${thumbsHTML}</tr></table>
+                        </div>
+
+                        <div class="product-action-row">
+                            <button class="unfavorite-btn" data-id="${album.id_album}" data-name="${album.titulo}">
+                                ❌ Quitar de Favoritos
+                            </button>
+                            <button class="addcart-btn" data-id="${album.id_album}">
+                                🛒 Agregar al Carrito
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                // Hacer clic en la tarjeta para abrir detalles
+                const productCard = cell.querySelector('.product-card');
+                productCard.addEventListener('click', function(e) {
+                    // Evitar que se active cuando se hace clic en botones internos
+                    if (e.target.classList.contains('unfavorite-btn') || 
+                        e.target.classList.contains('addcart-btn') ||
+                        e.target.classList.contains('thumb')) {
+                        return;
+                    }
+                    openAlbumDetails(album);
+                });
+                
+                // Cambiar cursor para indicar que es clickeable
+                productCard.style.cursor = 'pointer';
+                productCard.style.transition = 'transform 0.2s';
+                productCard.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                    this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+                });
+                productCard.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                });
+
+                currentRow.appendChild(cell);
+
+                // Si es el último álbum y la fila no está completa, agregar celdas vacías
+                if (index === albums.length - 1) {
+                    const remainingCells = albumsPerRow - (index % albumsPerRow) - 1;
+                    for (let i = 0; i <remainingCells; i++) {
+                        const emptyCell = document.createElement('td');
+                        currentRow.appendChild(emptyCell);
+                    }
+                }
+            });
+
+            // Agregar event listeners a los botones
+            setTimeout(() => {
+                // Botón para quitar de favoritos
+                document.querySelectorAll('.unfavorite-btn').forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const albumId = this.getAttribute('data-id');
+                        const albumName = this.getAttribute('data-name');
+                        removeFromFavorites(albumId, albumName, this.closest('.favorite-item'));
+                    });
+                });
+                
+                // Botón para agregar al carrito
+                document.querySelectorAll('.addcart-btn').forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const albumId = this.getAttribute('data-id');
+                        const albumElement = this.closest('.favorite-item');
+                        const albumName = albumElement.querySelector('.product-name').textContent;
+                        const priceElement = albumElement.querySelector('.meta-item.price');
+                        const priceText = priceElement ? priceElement.textContent : '$599 MXN';
+                        const price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 599;
+                        
+                        addToCartFromFavorites(albumId, albumName, price, e);
+                    });
+                });
+            }, 100);
+        }
+
+        // 3) Función para obtener imágenes del álbum (misma que en albumes.html)
+        function getAlbumImages(idAlbum) {
+            const startImage = (idAlbum - 1) * 4 + 1;
+            
+            return {
+                mainImage: `images/${startImage}.png`,
+                thumbnails: [
+                    `images/${startImage}.png`,
+                    `images/${startImage + 1}.png`,
+                    `images/${startImage + 2}.png`,
+                    `images/${startImage + 3}.png`
+                ]
+            };
+        }
+
+        // 4) Función para abrir detalles del álbum
+        function openAlbumDetails(albumData) {
+            // Guardar la página actual
+            sessionStorage.setItem('lastAlbumPage', 'favoritos.html');
+            
+            localStorage.setItem('selectedAlbum', JSON.stringify({
+                id: albumData.id_album,
+                titulo: albumData.titulo,
+                artista: albumData.nombre_artista,
+                anio: albumData.anio,
+                descripcion: albumData.descripcion_album,
+                genero: albumData.genero_album || 'Varios',
+                temas: albumData.cantidadtemas,
+                duracion: albumData.duracion_total || 0,
+                precio: albumData.precio || 599,
+                images: getAlbumImages(albumData.id_album)
+            }));
+            
+            window.location.href = 'canciones.html';
+        }
+
+        // 5) Función para quitar álbum de favoritos
+        async function removeFromFavorites(albumId, albumName, albumElement) {
+            const userId = localStorage.getItem('userId');
+            
+            if (!confirm(`¿Quitar "${albumName}" de tus favoritos?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('api.php?action=toggleFavorite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: parseInt(userId),
+                        albumId: parseInt(albumId)
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Feedback visual
+                    albumElement.style.animation = 'fadeOut 0.5s ease';
+                    setTimeout(() => {
+                        if (albumElement.parentNode) {
+                            albumElement.parentNode.remove();
+                            
+                            // Reorganizar la tabla si es necesario
+                            reorganizeTable();
+                        }
+                    }, 500);
+                    
+                    // Mostrar notificación
+                    showNotification('Álbum removido de favoritos');
+                    
+                    // Verificar si ya no hay favoritos
+                    setTimeout(() => {
+                        const remainingItems = document.querySelectorAll('.favorite-item');
+                        if (remainingItems.length === 0) {
+                            showNoFavoritesMessage();
+                        }
+                    }, 600);
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error removiendo de favoritos:', error);
+                alert('Error de conexión al servidor');
+            }
+        }
+
+        // 6) Función para agregar al carrito desde favoritos
+        async function addToCartFromFavorites(albumId, albumName, price, event) {
+            const userId = localStorage.getItem('userId');
+            
+            try {
+                const response = await fetch('api.php?action=addToCart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: parseInt(userId),
+                        tipo: 'album',
+                        id_producto: parseInt(albumId),
+                        precio: parseFloat(price),
+                        cantidad: 1
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Feedback visual
+                    const button = event.target;
+                    const originalText = button.textContent;
+                    button.textContent = '✓ Añadido';
+                    button.style.background = '#4CAF50';
+                    button.style.color = 'white';
+                    button.disabled = true;
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '';
+                        button.style.color = '';
+                        button.disabled = false;
+                    }, 1500);
+                    
+                    // Mostrar notificación
+                    showNotification('Producto agregado al carrito');
+                    
+                    // Actualizar contador del carrito si existe la función
+                    if (typeof updateCartCount === 'function') {
+                        updateCartCount();
+                    }
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error agregando al carrito:', error);
+                alert('Error de conexión al servidor');
+            }
+        }
+
+        // 7) Reorganizar tabla después de eliminar un favorito
+        function reorganizeTable() {
+            const tbody = document.getElementById('favoritesBody');
+            const items = Array.from(tbody.querySelectorAll('.favorite-item'));
+            
+            if (items.length === 0) {
+                return;
+            }
+            
+            // Limpiar tabla
+            tbody.innerHTML = '';
+            
+            const albumsPerRow = 3;
+            let currentRow;
+            
+            // Recrear filas
+            items.forEach((item, index) => {
+                if (index % albumsPerRow === 0) {
+                    currentRow = document.createElement('tr');
+                    tbody.appendChild(currentRow);
+                }
+                
+                const cell = document.createElement('td');
+                cell.appendChild(item);
+                currentRow.appendChild(cell);
+                
+                // Si es el último álbum y la fila no está completa, agregar celdas vacías
+                if (index === items.length - 1) {
+                    const remainingCells = albumsPerRow - (index % albumsPerRow) - 1;
+                    for (let i = 0; i < remainingCells; i++) {
+                        const emptyCell = document.createElement('td');
+                        currentRow.appendChild(emptyCell);
+                    }
+                }
+            });
+        }
+
+        // 8) Función para mostrar mensaje cuando no hay favoritos
+        function showNoFavoritesMessage() {
+            const tbody = document.getElementById('favoritesBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:center; padding:40px; color:#666;">
+                        <div style="max-width: 500px; margin: 0 auto;">
+                            <h3 style="margin-bottom: 20px;">No tienes álbumes favoritos</h3>
+                            <p style="margin-bottom: 20px;">Agrega álbumes a tus favoritos haciendo clic en el corazón ❤️ en cualquier álbum.</p>
+                            <a href="albumes.html" class="browse-btn" style="
+                                display: inline-block;
+                                background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+                                color: white;
+                                padding: 12px 24px;
+                                border-radius: 4px;
+                                text-decoration: none;
+                                font-weight: bold;
+                                transition: transform 0.2s, box-shadow 0.2s;
+                            ">Explorar Álbumes</a>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // 9) Función para mostrar mensajes de error
+        function showErrorMessage(message) {
+            const tbody = document.getElementById('favoritesBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:center; padding:40px; color:#8b0000;">
+                        ${message}
+                    </td>
+                </tr>
+            `;
+        }
+
+        // 10) Función para mostrar notificaciones
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 4px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // 11) Configurar logout
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtnDropdown');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    localStorage.removeItem("userEmail");
+                    localStorage.removeItem("userName");
+                    localStorage.removeItem("userId");
+                    localStorage.removeItem("userRole");
+                    alert("Sesión cerrada correctamente");
+                    window.location.href = "index.html";
+                });
+            }
+        });
+
+    </script>
+
+    <!-- Script principal para la sidebar -->
+    <script src="main.js"></script>
+    
+    <!-- Estilos adicionales para favoritos -->
+    <style>
+        .favorite-item {
+            position: relative;
+            border: 2px solid #FF4081 !important;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+        }
+        
+        .favorite-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #FF4081 0%, #f50057 100%);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1;
+        }
+        
+        .unfavorite-btn {
+            background: #FF4081 !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 15px !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+            font-weight: bold !important;
+            transition: background 0.3s !important;
+            margin-right: 10px !important;
+        }
+        
+        .unfavorite-btn:hover {
+            background: #F50057 !important;
+        }
+        
+        .addcart-btn {
+            background: #4CAF50 !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 15px !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+            font-weight: bold !important;
+            transition: background 0.3s !important;
+        }
+        
+        .addcart-btn:hover {
+            background: #45a049 !important;
+        }
+        
+        .product-action-row {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .browse-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(106, 17, 203, 0.3);
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
+</body>
+</html>

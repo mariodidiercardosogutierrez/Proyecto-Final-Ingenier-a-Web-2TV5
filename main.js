@@ -1,504 +1,415 @@
-// main.js - SISTEMA COMPLETO DE AUTENTICACIÓN CORREGIDO
-
-console.log("MAIN.JS CARGADO - VERSIÓN CORREGIDA");
-
-// ==================== VARIABLES GLOBALES ====================
-let isLoggingOut = false;
-let isInitialized = false; // Evitar múltiples inicializaciones
-
-// ==================== FUNCIONES DE SESIÓN ====================
-
-function saveSession(userData) {
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("userEmail", userData.email);
-    localStorage.setItem("userRole", userData.role);
-    localStorage.setItem("userName", userData.name); // AHORA SÍ existe
-    localStorage.setItem("loginTime", new Date().toISOString());
-}
-
-
-
-function clearSession() {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("loginTime");
-}
-
-function checkSession() {
-    return localStorage.getItem("isLoggedIn") === "true";
-}
-
-function getUserData() {
-    if (!checkSession()) return null;
-
-    return {
-        email: localStorage.getItem("userEmail"),
-        role: localStorage.getItem("userRole"),
-        name: localStorage.getItem("userName"), // ➜ NUEVO
-        loginTime: localStorage.getItem("loginTime")
-    };
-}
-
-function protectPage(allowedRoles = []) {
-    const currentPage = window.location.pathname.split('/').pop();
-    const publicPages = ['login.html', 'register.html', 'cperdida.html'];
-    
-    // Si estamos en página pública, no hacer nada (el login ya maneja redirección)
-    if (publicPages.includes(currentPage)) {
-        return true;
-    }
-    
-    // Para páginas protegidas
-    if (!checkSession()) {
-        // Solo redirigir si no estamos ya en login
-        if (currentPage !== 'login.html') {
-            window.location.href = "login.html";
-        }
-        return false;
-    }
-    
-    const user = getUserData();
-    
-    if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-        // Si no tiene permiso, redirigir según su rol
-        const targetPage = user.role === "admin" ? "admin.html" : "index.html";
-        if (currentPage !== targetPage) {
-            window.location.href = targetPage;
-        }
-        return false;
-    }
-    
-    return true;
-}
-
-// ==================== SIDEBAR ====================
-function setupSidebar() {
+// ====================
+// SIDEBAR
+// ====================
+document.addEventListener("DOMContentLoaded", function () {
+    const showBtn = document.getElementById("showSidebarBtn");
     const sidebar = document.querySelector(".sidebar");
     const hideBtn = document.querySelector(".sidebar-hide-btn");
-    const showBtn = document.getElementById("showSidebarBtn");
-    const content = document.querySelector(".content");
 
-    if (!sidebar || !content) return;
-
-    // Configurar sidebar responsive
-    if (window.innerWidth <= 768) {
-        sidebar.classList.add("hidden");
-        content.classList.add("full");
-        if (showBtn) showBtn.style.display = "block";
-    }
-
-    if (hideBtn && showBtn) {
-        hideBtn.addEventListener("click", () => {
-            sidebar.classList.add("hidden");
-            content.classList.add("full");
-            if (showBtn) showBtn.style.display = "block";
-        });
-
-        showBtn.addEventListener("click", () => {
-            sidebar.classList.remove("hidden");
-            content.classList.remove("full");
+    if (showBtn) {
+        showBtn.addEventListener("click", function () {
+            sidebar.classList.add("active");
             showBtn.style.display = "none";
         });
     }
 
-    // Responsive
-    window.addEventListener('resize', function() {
-        if (window.innerWidth <= 768) {
-            if (showBtn) showBtn.style.display = 'block';
-        } else {
-            if (showBtn) showBtn.style.display = 'none';
-            sidebar.classList.remove("hidden");
-            content.classList.remove("full");
-        }
-    });
-}
-
-// ==================== REGISTRO ====================
-function setupRegister() {
-    const form = document.getElementById('registerForm');
-    const message = document.getElementById('registerMessage');
-
-    if (!form || !message) return;
-
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const nombre = document.getElementById('nombre').value.trim();
-        const apellido = document.getElementById('apellido').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const telefono = document.getElementById('telefono').value.trim();
-        const fechaNacimiento = document.getElementById('fechaNacimiento').value;
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-
-        message.textContent = '';
-        message.className = 'register-notice';
-        message.style.display = 'none';
-
-        // Validaciones
-        if(nombre === '' || apellido === ''){
-            showMessage('Nombre y apellido son obligatorios', 'error');
-            return;
-        }
-
-        const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-        if(!emailRegex.test(email)){
-            showMessage('Correo inválido', 'error');
-            return;
-        }
-
-        if(!/^\d{10}$/.test(telefono)){
-            showMessage('El teléfono debe tener 10 dígitos', 'error');
-            return;
-        }
-
-        const hoy = new Date();
-        const nacimiento = new Date(fechaNacimiento);
-        let edad = hoy.getFullYear() - nacimiento.getFullYear();
-        const mes = hoy.getMonth() - nacimiento.getMonth();
-        if(mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())){
-            edad--;
-        }
-        if(edad < 12){
-            showMessage('Debes tener al menos 12 años para registrarte', 'error');
-            return;
-        }
-
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{9,}$/;
-        if(!passwordRegex.test(password)){
-            showMessage('Contraseña debe tener mínimo 9 caracteres, incluyendo mayúscula, minúscula, número y carácter especial', 'error');
-            return;
-        }
-
-        if(password !== confirmPassword){
-            showMessage('Las contraseñas no coinciden', 'error');
-            return;
-        }
-
-        // Registro exitoso
-        showMessage('¡Registro exitoso! Redirigiendo al login...', 'success');
-        
-        const users = JSON.parse(localStorage.getItem("users") || "[]");
-        users.push({
-            nombre,
-            apellido,
-            email,
-            telefono,
-            fechaNacimiento,
-            password: btoa(password),
-            role: "user",
-            fechaRegistro: new Date().toISOString()
+    if (hideBtn) {
+        hideBtn.addEventListener("click", function () {
+            sidebar.classList.remove("active");
+            if (showBtn) showBtn.style.display = "block";
         });
-        localStorage.setItem("users", JSON.stringify(users));
-        
-        setTimeout(() => {
-            window.location.href = "login.html";
-        }, 2000);
+    }
+
+    // Cerrar sidebar al hacer clic fuera de ella en móviles
+    document.addEventListener("click", function (event) {
+        if (window.innerWidth <= 768) {
+            if (sidebar.classList.contains("active") &&
+                !sidebar.contains(event.target) &&
+                event.target !== showBtn) {
+                sidebar.classList.remove("active");
+                if (showBtn) showBtn.style.display = "block";
+            }
+        }
     });
-    
-    function showMessage(text, type) {
-        message.textContent = text;
-        message.className = 'register-notice ' + type;
-        message.style.display = 'block';
+
+    // Evitar cierre en desktop
+    sidebar.addEventListener("click", function (event) {
+        event.stopPropagation();
+    });
+
+    // Inicializar funciones de usuario y carrito
+    initUserDisplay();
+    initCartCount();
+});
+
+// ====================
+// LOGIN/LOGOUT
+// ====================
+function initUserDisplay() {
+    // Mostrar información del usuario si está logueado
+    const userEmail = localStorage.getItem("userEmail");
+    const userName = localStorage.getItem("userName");
+
+    const userNameDisplay = document.getElementById("userNameDisplay");
+    const userEmailDisplay = document.getElementById("userEmailDisplay");
+
+    if (userNameDisplay && userEmailDisplay) {
+        if (userName && userEmail) {
+            userNameDisplay.textContent = userName;
+            userEmailDisplay.textContent = userEmail;
+        } else {
+            userNameDisplay.textContent = "Invitado";
+            userEmailDisplay.textContent = "No has iniciado sesión";
+        }
+    }
+
+    // Botón de logout en dropdown
+    const logoutBtnDropdown = document.getElementById("logoutBtnDropdown");
+    if (logoutBtnDropdown) {
+        logoutBtnDropdown.addEventListener("click", function () {
+            localStorage.removeItem("userEmail");
+            localStorage.removeItem("userName");
+            localStorage.removeItem("userId");
+            localStorage.removeItem("userRole");
+            alert("Sesión cerrada correctamente");
+            window.location.href = "index.html";
+        });
+    }
+
+    // Botón de logout en sidebar (si existe)
+    const logoutBtnSidebar = document.getElementById("logoutBtnSidebar");
+    if (logoutBtnSidebar) {
+        logoutBtnSidebar.addEventListener("click", function () {
+            localStorage.removeItem("userEmail");
+            localStorage.removeItem("userName");
+            localStorage.removeItem("userId");
+            localStorage.removeItem("userRole");
+            alert("Sesión cerrada correctamente");
+            window.location.href = "index.html";
+        });
     }
 }
 
-// ==================== LOGIN ====================
-// ==================== LOGIN ====================
-function setupLogin() {
-    const loginForm = document.getElementById("loginForm");
-    if (!loginForm) return;
+// ====================
+// CARRITO - FUNCIONES PRINCIPALES
+// ====================
 
-    // NO redirigir aquí - la función protectPage() ya lo hará si es necesario
-    // Solo configurar el evento del formulario
+// Función principal para agregar al carrito
+async function addToCart(productId, productName, price, event = null) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
     
-    loginForm.addEventListener("submit", async function(e) {
-        e.preventDefault();
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+        alert('Debes iniciar sesión para agregar productos al carrito');
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    try {
+        // Agregar al carrito usando userId directamente
+        const addResponse = await fetch('api.php?action=addToCart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: userId,
+                tipo: 'album',
+                id_producto: productId,
+                precio: price,
+                cantidad: 1
+            })
+        });
+        
+        const addResult = await addResponse.json();
+        
+        if (addResult.success) {
+            // Feedback visual
+            if (event && event.target) {
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = '✓ Añadido';
+                button.style.background = 'green';
+                button.style.color = 'white';
+                button.disabled = true;
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                    button.style.color = '';
+                    button.disabled = false;
+                }, 1500);
+            }
+            
+            // Actualizar contador del carrito
+            updateCartCount();
+            
+            // Mostrar notificación
+            showCartNotification('Producto añadido al carrito');
+        } else {
+            alert('Error: ' + addResult.message);
+        }
+    } catch (error) {
+        console.error('Error agregando al carrito:', error);
+        alert('Error de conexión al servidor');
+    }
+}
 
-        const email = document.getElementById("email").value.trim();
-        const password = document.getElementById("password").value.trim();
+// Función auxiliar para obtener userId (compatibilidad)
+async function getUserIdForCart() {
+    const userId = localStorage.getItem('userId');
+    if (userId) return parseInt(userId);
+    
+    // Si no hay userId, intentar obtenerlo del email
+    const userEmail = localStorage.getItem('userEmail');
+    if (!userEmail) return null;
+    
+    try {
+        const response = await fetch('api.php?action=getUserId', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail })
+        });
+        
+        const data = await response.json();
+        if (data.success && data.userId) {
+            localStorage.setItem('userId', data.userId);
+            return data.userId;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error obteniendo userId:', error);
+        return null;
+    }
+}
 
-        try {
-            const response = await fetch("api.php?action=login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password })
+// Actualizar contador del carrito
+async function updateCartCount() {
+    const userId = localStorage.getItem('userId');
+    if (!userId) return;
+    
+    try {
+        const response = await fetch(`api.php?action=getCartItems&userId=${userId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Actualizar todos los botones del carrito
+            document.querySelectorAll('.icon-btn').forEach(btn => {
+                if (btn.textContent.includes('🛒') || (btn.href && btn.href.includes('carrito'))) {
+                    if (data.count > 0) {
+                        // Si ya tiene un span, actualizarlo, si no, agregarlo
+                        let countSpan = btn.querySelector('.cart-count');
+                        if (!countSpan) {
+                            countSpan = document.createElement('span');
+                            countSpan.className = 'cart-count';
+                            btn.appendChild(countSpan);
+                        }
+                        countSpan.textContent = ` (${data.count})`;
+                    } else {
+                        // Eliminar el contador si no hay items
+                        const countSpan = btn.querySelector('.cart-count');
+                        if (countSpan) {
+                            countSpan.remove();
+                        }
+                    }
+                }
             });
+        }
+    } catch (error) {
+        console.error('Error actualizando contador:', error);
+    }
+}
 
-            const data = await response.json();
-            console.log("RESPUESTA PHP:", data);
+// Inicializar contador del carrito
+function initCartCount() {
+    // Esperar a que se cargue el usuario
+    setTimeout(() => {
+        if (localStorage.getItem('userId')) {
+            updateCartCount();
+        }
+    }, 1000);
+}
 
-            if (!data.success) {
-                alert(data.message || "Correo o contraseña incorrectos");
+// Mostrar notificación del carrito
+function showCartNotification(message) {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = 'cart-notification';
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Remover después de 3 segundos
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Añadir estilos de animación para notificaciones
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .cart-count {
+        background: #8b0000;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 12px;
+        margin-left: 5px;
+    }
+`;
+document.head.appendChild(style);
+
+// Hacer funciones disponibles globalmente
+window.addToCart = addToCart;
+window.getUserIdForCart = getUserIdForCart;
+window.updateCartCount = updateCartCount;
+
+// ====================
+// DEBUG
+// ====================
+function debugCart() {
+    console.log('Debug del carrito:');
+    console.log('User ID en localStorage:', localStorage.getItem('userId'));
+    console.log('User email en localStorage:', localStorage.getItem('userEmail'));
+    
+    // Probar API directamente
+    fetch('api.php?action=getAlbums')
+        .then(res => res.json())
+        .then(data => console.log('API funciona:', data.success))
+        .catch(err => console.error('API error:', err));
+}
+
+// Función para guardar datos de usuario después del login
+function saveUserData(userData) {
+    if (userData && userData.id) {
+        localStorage.setItem('userId', userData.id);
+        localStorage.setItem('userName', userData.nombre);
+        localStorage.setItem('userEmail', userData.email);
+        if (userData.role) {
+            localStorage.setItem('userRole', userData.role);
+        }
+    }
+}
+
+// Verificar si hay usuario al cargar la página
+window.addEventListener('load', function() {
+    if (!localStorage.getItem('userId')) {
+        // Intentar obtener userId si hay email pero no userId
+        const userEmail = localStorage.getItem('userEmail');
+        if (userEmail) {
+            getUserIdForCart().then(userId => {
+                if (userId) {
+                    localStorage.setItem('userId', userId);
+                    updateCartCount();
+                }
+            });
+        }
+    } else {
+        updateCartCount();
+    }
+});
+
+// ====================
+// LOGIN FORM HANDLER
+// ====================
+function initLoginForm() {
+    const loginForm = document.getElementById('loginForm');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('Por favor, complete todos los campos');
                 return;
             }
-
-            // Guardar sesión
-            saveSession({ 
-                email: data.user.email, 
-                role: data.user.role,
-                name: data.user.nombre + " " + data.user.apellido 
-            });
-
-            // Redirigir
-            window.location.href = data.user.role === "admin" ? "admin.html" : "index.html";
-
-        } catch (err) {
-            console.error(err);
-            alert("Error conectando con el servidor.");
-        }
-    });
-}
-// ==================== LOGOUT ====================
-function logoutUser() {
-    if (isLoggingOut) return;
-    isLoggingOut = true;
-    
-    const user = getUserData();
-    const emailDisplay = user ? (user.email.length > 25 ? user.email.substring(0, 22) + '...' : user.email) : 'Usuario';
-    
-    if (confirm(`¿Cerrar sesión de ${emailDisplay}?`)) {
-        clearSession();
-        
-        const userDropdown = document.querySelector('.user-dropdown');
-        if (userDropdown) userDropdown.classList.remove('active');
-        
-        console.log("Sesión cerrada correctamente");
-        window.location.href = "login.html";
-        
-        setTimeout(() => { isLoggingOut = false; }, 1000);
-    } else {
-        isLoggingOut = false;
-    }
-}
-
-// ==================== DROPDOWN DE USUARIO ====================
-function setupUserDropdown() {
-    const userBtn = document.querySelector('.user-btn');
-    const userDropdown = document.querySelector('.user-dropdown');
-
-    if (!userBtn || !userDropdown) return;
-
-    // ============================
-    // 1. MOSTRAR NOMBRE Y CORREO
-    // ============================
-    const user = getUserData();
-    if (user) {
-        const nameDisplay = document.getElementById('userNameDisplay');
-        const emailDisplay = document.getElementById('userEmailDisplay');
-
-        if (nameDisplay) nameDisplay.textContent = user.name;
-        if (emailDisplay) emailDisplay.textContent = user.email;
-    }
-
-    // ============================
-    // 2. COMPORTAMIENTO DEL DROPDOWN
-    // ============================
-    let openTimer = null;
-    let closeTimer = null;
-
-    // Abrir con leve retraso
-    userBtn.addEventListener('mouseenter', () => {
-        if (closeTimer) clearTimeout(closeTimer);
-
-        openTimer = setTimeout(() => {
-            userDropdown.classList.add('active');
-        }, 200);
-    });
-
-    // Iniciar cierre
-    userBtn.addEventListener('mouseleave', () => {
-        if (openTimer) clearTimeout(openTimer);
-
-        closeTimer = setTimeout(() => {
-            if (!userDropdown.matches(':hover')) {
-                userDropdown.classList.remove('active');
+            
+            try {
+                const response = await fetch('api.php?action=login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Guardar datos del usuario
+                    saveUserData(data.user);
+                    
+                    // Mostrar mensaje de éxito
+                    alert('Inicio de sesión exitoso');
+                    
+                    // Redirigir a la página principal
+                    window.location.href = 'index.html';
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error de conexión con el servidor');
             }
-        }, 2500);
-    });
-
-    // Mantener abierto si el mouse está dentro
-    userDropdown.addEventListener('mouseenter', () => {
-        if (closeTimer) clearTimeout(closeTimer);
-    });
-
-    // Cerrar al salir
-    userDropdown.addEventListener('mouseleave', () => {
-        closeTimer = setTimeout(() => {
-            if (!userBtn.matches(':hover')) {
-                userDropdown.classList.remove('active');
-            }
-        }, 2500);
-    });
-
-    // ============================
-    // 3. BOTÓN DE LOGOUT
-    // ============================
-    const logoutBtn = document.getElementById('logoutBtnDropdown');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            logoutUser();
         });
     }
 }
 
-// ==================== ADMIN LOGOUT ====================
-function setupAdminLogout() {
-    const adminLogoutBtn = document.getElementById('logoutBtn');
-    if (adminLogoutBtn) {
-        adminLogoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            logoutUser();
-        });
-    }
-}
-
-// ==================== CATÁLOGO ====================
-function setupCatalog() {
-    // Solo si estamos en una página con catálogo
-    if (!document.querySelector('.product-card')) return;
-    
-    // Miniaturas
-    document.querySelectorAll('.product-card').forEach(card => {
-        const mainImg = card.querySelector('.product-image img');
-        card.querySelectorAll('.thumb').forEach(thumb => {
-            thumb.addEventListener('click', e => {
-                e.preventDefault();
-                mainImg.src = thumb.src;
-            });
-        });
-    });
-    
-    // Botones de género
-    document.querySelectorAll('.genre-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.genre-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            console.log(`Filtrando por género: ${this.textContent}`);
-        });
-    });
-    
-    // Botones de compra
-    document.querySelectorAll('.buy-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const albumName = this.closest('.product-card').querySelector('.product-name').textContent;
-            const albumPrice = this.closest('.product-card').querySelector('.meta-item.price').textContent;
-            alert(`¡${albumName} agregado al carrito! ${albumPrice}`);
-            addToCart(albumName, albumPrice);
-        });
-    });
-}
-
-// ==================== FUNCIONES AUXILIARES ====================
-function addToCart(productName, price) {
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const priceNumber = parseInt(price.replace(/[^0-9]/g, ''));
-    
-    const existingProduct = cart.find(item => item.name === productName);
-    
-    if (existingProduct) {
-        existingProduct.quantity += 1;
-    } else {
-        cart.push({
-            name: productName,
-            price: priceNumber,
-            quantity: 1,
-            date: new Date().toISOString()
-        });
-    }
-    
-    localStorage.setItem('cart', JSON.stringify(cart));
-    updateCartCount();
-}
-
-function updateCartCount() {
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    console.log(`Carrito actualizado: ${totalItems} productos`);
-}
-
-function handleImageErrors() {
-    document.querySelectorAll('img').forEach(img => {
-        img.onerror = function() {
-            this.src = 'https://via.placeholder.com/400x300/8b0000/ffffff?text=Álbum+de+Jazz';
-        };
-    });
-}
-
-// ==================== USUARIOS POR DEFECTO ====================
-function setupDefaultUsers() {
-    if (!localStorage.getItem('users')) {
-        const defaultUsers = [
-            {
-                nombre: "Admin",
-                apellido: "Music",
-                email: "admin@music.com",
-                telefono: "1234567890",
-                fechaNacimiento: "1990-01-01",
-                password: btoa("Admin123!"),
-                role: "admin",
-                fechaRegistro: new Date().toISOString()
-            },
-            {
-                nombre: "Usuario",
-                apellido: "Normal",
-                email: "user@music.com",
-                telefono: "0987654321",
-                fechaNacimiento: "2000-01-01",
-                password: btoa("User123!"),
-                role: "user",
-                fechaRegistro: new Date().toISOString()
-            }
-        ];
-        localStorage.setItem('users', JSON.stringify(defaultUsers));
-        console.log("Usuarios por defecto creados");
-    }
-}
-
-// ==================== INICIALIZACIÓN PRINCIPAL ====================
-// ==================== INICIALIZACIÓN PRINCIPAL ====================
-function initializeApp() {
-    if (isInitialized) return;
-    isInitialized = true;
-    
-    console.log("Inicializando aplicación...");
-    
-    // Configurar usuarios por defecto
-    setupDefaultUsers();
-    
-    // Primero configurar componentes, luego verificar protección
-    setupSidebar();
-    setupRegister();
-    setupLogin();  // ¡Esta función ya maneja redirección si hay sesión!
-    setupUserDropdown();
-    setupAdminLogout();
-    setupCatalog();
-    
-    // Imágenes
-    handleImageErrors();
-    
-    // Solo llamar protectPage() si NO estamos en páginas públicas
-    const currentPage = window.location.pathname.split('/').pop();
-    const publicPages = ['login.html', 'register.html', 'cperdida.html'];
-    
-    // Si NO estamos en una página pública, verificar protección
-    if (!publicPages.includes(currentPage)) {
-        // Para admin.html
-        if (currentPage === 'admin.html') {
-            protectPage(['admin']);
-        } 
-        // Para otras páginas protegidas (index.html, albumes.html, etc.)
-        else {
-            protectPage(['user', 'admin']);
+// Función para guardar datos del usuario (ya existe en tu main.js)
+function saveUserData(userData) {
+    if (userData && userData.id) {
+        localStorage.setItem('userId', userData.id);
+        localStorage.setItem('userName', userData.nombre);
+        localStorage.setItem('userEmail', userData.email);
+        if (userData.role) {
+            localStorage.setItem('userRole', userData.role);
         }
     }
 }
-// ==================== EJECUCIÓN ====================
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
-} else {
-    initializeApp();
-}
+
+// Inicializar el formulario de login si existe
+document.addEventListener('DOMContentLoaded', function() {
+    initLoginForm();
+    // ... el resto de tu código existente
+});

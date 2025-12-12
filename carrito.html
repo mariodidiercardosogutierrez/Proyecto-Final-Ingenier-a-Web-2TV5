@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Carrito - SoundSpace</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- BOTÓN QUE MUESTRA LA SIDEBAR -->
+    <button id="showSidebarBtn" class="show-sidebar-btn">➕</button>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <button class="sidebar-hide-btn">🗕</button>
+        </div>
+
+        <nav class="menu">
+            <p class="section-title">Navegación</p>
+            <a href="index.html">Inicio</a>
+            <a href="albumes.html">Géneros</a>
+            <a href="artistas.html">Artistas</a>
+            <a href="compras.html">Mis Compras</a>
+            <a href="tarjetas.html">Tarjetas</a>
+
+            <p class="section-title">Del usuario</p>
+            <a href="biblioteca.html">Biblioteca</a>
+            <a href="favoritos.html">Favoritos</a>
+           
+        </nav>
+    </aside>
+
+    <!-- CONTENIDO -->
+    <div class="content">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-logo">
+                <img src="images/logo.png" alt="SoundSpace">
+            </div>
+
+            <div class="icons">
+                <a href="carrito.html" class="icon-btn">🛒</a>
+
+                <div class="user-dropdown">
+                    <button class="user-btn icon-btn">👤</button>
+
+                    <div class="dropdown-menu">
+                        <div class="user-info">
+                            <strong id="userNameDisplay"></strong><br>
+                            <small id="userEmailDisplay"></small>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+                        <button id="logoutBtnDropdown" class="dropdown-item logout-btn">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- SECCIÓN PRINCIPAL -->
+        <main>
+            <section class="catalog-section">
+                <div class="catalog-container">
+                    <div class="catalog-header">
+                        <h2>🛒 Mi Carrito de Compras</h2>
+                        <p id="cartSummary">Cargando carrito...</p>
+                    </div>
+                    
+                    <div id="cartContent" style="min-height: 300px;">
+                        <p style="text-align: center; padding: 40px; color: #666;">
+                            Cargando tu carrito...
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2025 Soundspace - Todos los derechos reservados</p>
+        </footer>
+    </div>
+
+    <script src="main.js"></script>
+    <script>
+        // Script simplificado para debugging
+        
+        async function testAPI() {
+            console.log('=== TEST API ===');
+            try {
+                const response = await fetch('api.php?action=test');
+                const data = await response.json();
+                console.log('API Test Result:', data);
+                return data.success;
+            } catch (error) {
+                console.error('API Test Error:', error);
+                return false;
+            }
+        }
+        
+        async function loadCartSimple() {
+            const userId = localStorage.getItem('userId');
+            const cartContent = document.getElementById('cartContent');
+            const cartSummary = document.getElementById('cartSummary');
+            
+            console.log('User ID:', userId);
+            
+            // Primero probar la API
+            const apiWorks = await testAPI();
+            if (!apiWorks) {
+                cartContent.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #8b0000;">
+                        <h3>⚠️ API NO RESPONDE</h3>
+                        <p>No se puede conectar con api.php</p>
+                        <p>Abre la consola (F12) para ver los errores.</p>
+                        <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #8b0000; color: white; border: none; border-radius: 4px;">Reintentar</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            if (!userId) {
+                cartContent.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <h3 style="color: #8b0000;">No estás logueado</h3>
+                        <a href="login.html" style="margin-top: 20px; display: inline-block; padding: 10px 20px; background: #8b0000; color: white; text-decoration: none; border-radius: 4px;">Iniciar Sesión</a>
+                    </div>
+                `;
+                cartSummary.textContent = 'Usuario no autenticado';
+                return;
+            }
+            
+            try {
+                console.log('Cargando carrito para usuario:', userId);
+                const response = await fetch(`api.php?action=getCartItems&userId=${userId}`);
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Carrito data:', data);
+                
+                if (data.success) {
+                    if (data.items && data.items.length > 0) {
+                        let html = '<div style="background: white; padding: 20px; border-radius: 8px;">';
+                        html += `<h3>${data.items.length} producto(s) en el carrito</h3>`;
+                        
+                        data.items.forEach((item, index) => {
+                            html += `
+                                <div style="border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 4px;">
+                                    <strong>${item.nombre || 'Producto ' + (index + 1)}</strong><br>
+                                    <small>${item.artista || ''} - $${item.precio_unitario || 0} x ${item.cantidad || 1}</small>
+                                    <button onclick="removeItem(${item.id})" style="margin-left: 10px; padding: 5px 10px; background: #8b0000; color: white; border: none; border-radius: 4px; font-size: 12px;">Eliminar</button>
+                                </div>
+                            `;
+                        });
+                        
+                        html += `<div style="margin-top: 20px; font-weight: bold; text-align: right;">
+                                    Total: $${data.total || 0} MXN
+                                 </div>`;
+                        html += `<div style="margin-top: 20px;">
+                                    <button onclick="clearCartSimple()" style="margin-right: 10px; padding: 10px 20px; background: #ccc; color: #333; border: none; border-radius: 4px;">Vaciar Carrito</button>
+                                    <button onclick="checkoutSimple()" style="padding: 10px 20px; background: #8b0000; color: white; border: none; border-radius: 4px;">Proceder al Pago</button>
+                                 </div>`;
+                        html += '</div>';
+                        
+                        cartContent.innerHTML = html;
+                        cartSummary.textContent = `${data.items.length} producto(s) - $${data.total || 0} MXN`;
+                    } else {
+                        cartContent.innerHTML = `
+                            <div style="text-align: center; padding: 40px;">
+                                <h3 style="color: #666;">Tu carrito está vacío</h3>
+                                <a href="index.html" style="margin-top: 20px; display: inline-block; padding: 10px 20px; background: #8b0000; color: white; text-decoration: none; border-radius: 4px;">Ver Catálogo</a>
+                            </div>
+                        `;
+                        cartSummary.textContent = 'Carrito vacío';
+                    }
+                } else {
+                    cartContent.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #8b0000;">
+                            <h3>Error en la API</h3>
+                            <p>${data.message || 'Error desconocido'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                cartContent.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #8b0000;">
+                        <h3>Error de conexión</h3>
+                        <p>${error.message}</p>
+                        <button onclick="loadCartSimple()" style="margin-top: 20px; padding: 10px 20px; background: #8b0000; color: white; border: none; border-radius: 4px;">Reintentar</button>
+                    </div>
+                `;
+            }
+        }
+        
+        async function removeItem(itemId) {
+            if (!confirm('¿Eliminar este producto?')) return;
+            
+            try {
+                const response = await fetch('api.php?action=removeFromCart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ itemId: itemId })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('Producto eliminado');
+                    loadCartSimple();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error de conexión');
+            }
+        }
+        
+        async function clearCartSimple() {
+            if (!confirm('¿Vaciar todo el carrito?')) return;
+            
+            const userId = localStorage.getItem('userId');
+            if (!userId) return;
+            
+            try {
+                const cartResponse = await fetch(`api.php?action=getCartItems&userId=${userId}`);
+                const cartData = await cartResponse.json();
+                
+                if (cartData.success && cartData.cartId) {
+                    const response = await fetch('api.php?action=clearCart', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cartId: cartData.cartId })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('Carrito vaciado');
+                        loadCartSimple();
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                }
+            } catch (error) {
+                alert('Error de conexión');
+            }
+        }
+        
+        function checkoutSimple() {
+            alert('Funcionalidad de pago en desarrollo. ¡Gracias por tu compra!');
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Carrito page loaded');
+            loadCartSimple();
+        });
+        
+        window.removeItem = removeItem;
+        window.clearCartSimple = clearCartSimple;
+        window.checkoutSimple = checkoutSimple;
+    </script>
+</body>
+</html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundSpace - Mi Biblioteca</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- BOTÓN QUE MUESTRA LA SIDEBAR -->
+    <button id="showSidebarBtn" class="show-sidebar-btn">➕</button>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <button class="sidebar-hide-btn">🗕</button>
+        </div>
+
+        <nav class="menu">
+            <p class="section-title">Navegación</p>
+            <a href="index.html">Inicio</a>
+            <a href="albumes.html">Géneros</a>
+            <a href="artistas.html">Artistas</a>
+            <a href="compras.html">Mis Compras</a>
+            <a href="tarjetas.html">Tarjetas</a>
+
+            <p class="section-title">Del usuario</p>
+            <a href="biblioteca.html" class="active">Biblioteca</a>
+            <a href="favoritos.html">Favoritos</a>
+        </nav>
+    </aside>
+
+    <!-- CONTENIDO -->
+    <div class="content">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-logo">
+                <img src="images/logo.png" alt="SoundSpace">
+            </div>
+
+            <div class="icons">
+                <a href="carrito.html" class="icon-btn">🛒</a>
+
+                <div class="user-dropdown">
+                    <button class="user-btn icon-btn">👤</button>
+
+                    <div class="dropdown-menu">
+                        <div class="user-info">
+                            <strong id="userNameDisplay"></strong><br>
+                            <small id="userEmailDisplay"></small>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+                        <button id="logoutBtnDropdown" class="dropdown-item logout-btn">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- SECCIÓN PRINCIPAL -->
+        <main>
+            <section class="catalog-section">
+                <div class="catalog-container">
+                    <div class="catalog-header">
+                        <h2>Mi Biblioteca de Álbumes</h2>
+                        <p>Álbumes que has comprado y ahora son tuyos.</p>
+                    </div>
+
+                    <!-- CONTENEDOR DINÁMICO -->
+                    <table class="catalog" id="libraryTable">
+                        <tbody id="libraryBody">
+                            <tr>
+                                <td colspan="3" style="text-align:center; padding:40px;">
+                                    Cargando tu biblioteca...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2025 Soundspace - Todos los derechos reservados</p>
+        </footer>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // VERIFICACIÓN DE LOGIN
+        document.addEventListener("DOMContentLoaded", function () {
+            const userId = localStorage.getItem('userId');
+            const userEmail = localStorage.getItem('userEmail');
+            
+            console.log('Verificando login...');
+            console.log('UserID:', userId);
+            
+            // Si no hay usuario logueado, redirigir a login
+            if (!userId || !userEmail) {
+                console.log('No hay usuario logueado, redirigiendo a login...');
+                alert('Por favor, inicie sesión para ver su biblioteca');
+                window.location.href = 'login.html';
+            } else {
+                console.log('Usuario logueado:', userEmail);
+                // Mostrar información del usuario
+                document.getElementById('userNameDisplay').textContent = localStorage.getItem('userName') || 'Usuario';
+                document.getElementById('userEmailDisplay').textContent = userEmail;
+                
+                // Cargar la biblioteca del usuario
+                loadUserLibrary();
+            }
+        });
+
+        // ==================== FUNCIONES DE LA BIBLIOTECA ====================
+
+        // 1) Cargar la biblioteca del usuario (álbumes comprados)
+        // En biblioteca.html, modifica la función loadUserLibrary:
+// En biblioteca.html, modifica la función loadUserLibrary:
+async function loadUserLibrary() {
+    const userId = localStorage.getItem('userId');
+    
+    if (!userId) {
+        showErrorMessage("No se pudo identificar al usuario. Inicie sesión nuevamente.");
+        return;
+    }
+    
+    try {
+        // Usar el nuevo endpoint
+        const response = await fetch(`api.php?action=getUserLibrary&userId=${userId}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+            showErrorMessage("Error al cargar tu biblioteca");
+            return;
+        }
+        
+        // Mostrar los álbumes
+        if (data.albums && data.albums.length > 0) {
+            displayLibraryAlbums(data.albums);
+        } else {
+            showNoAlbumsMessage();
+        }
+        
+    } catch (error) {
+        console.error("Error cargando la biblioteca:", error);
+        showErrorMessage("Error de conexión. Intente más tarde.");
+    }
+}
+        // 2) Mostrar álbumes en la biblioteca
+        function displayLibraryAlbums(albums) {
+            const tbody = document.getElementById('libraryBody');
+            
+            if (!albums || albums.length === 0) {
+                showNoAlbumsMessage();
+                return;
+            }
+
+            tbody.innerHTML = "";
+            
+            const albumsPerRow = 3;
+            let currentRow;
+            
+            albums.forEach((album, index) => {
+                // Crear nueva fila cada 3 álbumes
+                if (index % albumsPerRow === 0) {
+                    currentRow = document.createElement('tr');
+                    tbody.appendChild(currentRow);
+                }
+
+                // Obtener imágenes para este álbum
+                const images = getAlbumImages(album.id_album);
+                const startImage = (album.id_album - 1) * 4 + 1;
+                const precio = album.precio ? `$${album.precio} MXN` : '$599 MXN';
+                
+                // Crear HTML de miniaturas
+                let thumbsHTML = "";
+                for (let i = 0; i < 4; i++) {
+                    const imgNum = startImage + i;
+                    thumbsHTML += `
+                        <td>
+                            <img class="thumb" 
+                                 src="images/${imgNum}.png" 
+                                 alt="${album.titulo} - Imagen ${i + 1}"
+                                 onerror="this.style.display='none'">
+                        </td>
+                    `;
+                }
+
+                // Crear celda del álbum en la biblioteca
+                const cell = document.createElement('td');
+                cell.innerHTML = `
+                    <div class="product-card album-clickable library-item" data-album-id="${album.id_album}">
+                        <div class="library-badge">✅ TUYO</div>
+                        
+                        <div class="product-header">
+                            <figure class="product-image">
+                                <img src="${images.mainImage}" 
+                                     alt="${album.titulo}"
+                                     onerror="this.src='images/placeholder.png'">
+                            </figure>
+                            <div class="product-title-info">
+                                <h3 class="product-name">${album.titulo}</h3>
+                                <div class="product-artist">${album.nombre_artista}</div>
+                            </div>
+                        </div>
+
+                        <p class="product-description">${album.descripcion_album}</p>
+
+                        <div class="product-meta-row">
+                            <span class="meta-item year">${album.anio}</span>
+                            <span class="meta-item tracks">${album.cantidadtemas} temas</span>
+                            <span class="meta-item price">${precio}</span>
+                        </div>
+
+                        <div class="product-thumbs-row">
+                            <table class="thumbs"><tr>${thumbsHTML}</tr></table>
+                        </div>
+
+                        <div class="product-action-row">
+                            <button class="play-btn" data-id="${album.id_album}">🎵 Reproducir</button>
+                            <button class="details-btn" data-id="${album.id_album}">📖 Ver Canciones</button>
+                        </div>
+                    </div>
+                `;
+
+                // Hacer clic en la tarjeta para abrir detalles
+                const productCard = cell.querySelector('.product-card');
+                productCard.addEventListener('click', function(e) {
+                    // Evitar que se active cuando se hace clic en botones internos
+                    if (e.target.classList.contains('play-btn') || 
+                        e.target.classList.contains('details-btn') ||
+                        e.target.classList.contains('thumb')) {
+                        return;
+                    }
+                    openAlbumDetails(album);
+                });
+                
+                // Cambiar cursor para indicar que es clickeable
+                productCard.style.cursor = 'pointer';
+                productCard.style.transition = 'transform 0.2s';
+                productCard.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                    this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+                });
+                productCard.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                });
+
+                currentRow.appendChild(cell);
+
+                // Si es el último álbum y la fila no está completa, agregar celdas vacías
+                if (index === albums.length - 1) {
+                    const remainingCells = albumsPerRow - (index % albumsPerRow) - 1;
+                    for (let i = 0; i < remainingCells; i++) {
+                        const emptyCell = document.createElement('td');
+                        currentRow.appendChild(emptyCell);
+                    }
+                }
+            });
+
+            // Agregar event listeners a los botones
+            setTimeout(() => {
+                // Botón de reproducción
+                document.querySelectorAll('.play-btn').forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const albumId = this.getAttribute('data-id');
+                        const albumName = this.closest('.product-card').querySelector('.product-name').textContent;
+                        playAlbum(albumId, albumName);
+                    });
+                });
+                
+                // Botón de ver canciones
+                document.querySelectorAll('.details-btn').forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const albumId = this.getAttribute('data-id');
+                        const albumCard = this.closest('.product-card');
+                        const albumData = {
+                            id_album: albumId,
+                            titulo: albumCard.querySelector('.product-name').textContent,
+                            nombre_artista: albumCard.querySelector('.product-artist').textContent,
+                            anio: albumCard.querySelector('.meta-item.year').textContent,
+                            descripcion_album: albumCard.querySelector('.product-description').textContent,
+                            cantidadtemas: albumCard.querySelector('.meta-item.tracks').textContent.replace(' temas', ''),
+                            precio: albumCard.querySelector('.meta-item.price').textContent
+                        };
+                        openAlbumDetails(albumData);
+                    });
+                });
+            }, 100);
+        }
+
+        // 3) Función para obtener imágenes del álbum (misma que en albumes.html)
+        function getAlbumImages(idAlbum) {
+            const startImage = (idAlbum - 1) * 4 + 1;
+            
+            return {
+                mainImage: `images/${startImage}.png`,
+                thumbnails: [
+                    `images/${startImage}.png`,
+                    `images/${startImage + 1}.png`,
+                    `images/${startImage + 2}.png`,
+                    `images/${startImage + 3}.png`
+                ]
+            };
+        }
+
+        // 4) Función para abrir detalles del álbum
+        function openAlbumDetails(albumData) {
+            // Guardar la página actual
+            sessionStorage.setItem('lastAlbumPage', 'biblioteca.html');
+            
+            localStorage.setItem('selectedAlbum', JSON.stringify({
+                id: albumData.id_album,
+                titulo: albumData.titulo,
+                artista: albumData.nombre_artista,
+                anio: albumData.anio,
+                descripcion: albumData.descripcion_album,
+                genero: albumData.genero_album || 'Varios',
+                temas: albumData.cantidadtemas,
+                duracion: albumData.duracion_total || 0,
+                precio: albumData.precio || 599,
+                images: getAlbumImages(albumData.id_album)
+            }));
+            
+            window.location.href = 'canciones.html';
+        }
+
+        // 5) Función para simular reproducción del álbum
+        function playAlbum(albumId, albumName) {
+            // Aquí podrías implementar la lógica de reproducción
+            alert(`Reproduciendo álbum: ${albumName}\n\n¡Disfruta de tu música!`);
+            
+            // O podrías redirigir a un reproductor
+            // window.location.href = `reproductor.html?album=${albumId}`;
+        }
+
+        // 6) Función para mostrar mensaje cuando no hay álbumes
+        function showNoAlbumsMessage() {
+            const tbody = document.getElementById('libraryBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:center; padding:40px; color:#666;">
+                        <div style="max-width: 500px; margin: 0 auto;">
+                            <h3 style="margin-bottom: 20px;">Tu biblioteca está vacía</h3>
+                            <p style="margin-bottom: 20px;">Aún no has comprado ningún álbum.</p>
+                            <a href="albumes.html" class="browse-btn" style="
+                                display: inline-block;
+                                background: #6a11cb;
+                                color: white;
+                                padding: 12px 24px;
+                                border-radius: 4px;
+                                text-decoration: none;
+                                font-weight: bold;
+                            ">Explorar Álbumes</a>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // 7) Función para mostrar mensajes de error
+        function showErrorMessage(message) {
+            const tbody = document.getElementById('libraryBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:center; padding:40px; color:#8b0000;">
+                        ${message}
+                    </td>
+                </tr>
+            `;
+        }
+
+        // 8) Configurar logout
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtnDropdown');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    localStorage.removeItem("userEmail");
+                    localStorage.removeItem("userName");
+                    localStorage.removeItem("userId");
+                    localStorage.removeItem("userRole");
+                    alert("Sesión cerrada correctamente");
+                    window.location.href = "index.html";
+                });
+            }
+        });
+
+    </script>
+
+    <!-- Script principal para la sidebar -->
+    <script src="main.js"></script>
+    
+    <!-- Estilos adicionales para la biblioteca -->
+    <style>
+        .library-item {
+            position: relative;
+            border: 2px solid #4CAF50 !important;
+        }
+        
+        .library-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #4CAF50;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1;
+        }
+        
+        .play-btn {
+            background: #4CAF50 !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 15px !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+            font-weight: bold !important;
+            transition: background 0.3s !important;
+            margin-right: 10px !important;
+        }
+        
+        .play-btn:hover {
+            background: #45a049 !important;
+        }
+        
+        .details-btn {
+            background: #2196F3 !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 15px !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+            font-weight: bold !important;
+            transition: background 0.3s !important;
+        }
+        
+        .details-btn:hover {
+            background: #0b7dda !important;
+        }
+        
+        .product-action-row {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .browse-btn:hover {
+            background: #5a0cb3 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+    </style>
+</body>
+</html>

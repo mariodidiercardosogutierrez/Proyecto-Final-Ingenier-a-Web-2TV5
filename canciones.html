@@ -1,5 +1,7 @@
+
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +21,7 @@
 
         <nav class="menu">
             <p class="section-title">Navegación</p>
-            <a href="index.html" class="active">Inicio</a>
+            <a href="index.html">Inicio</a>
             <a href="albumes.html">Géneros</a>
             <a href="artistas.html">Artistas</a>
             <a href="compras.html">Mis Compras</a>
@@ -41,7 +43,7 @@
             </div>
 
             <div class="icons">
-                <a href="#" class="icon-btn">🛒</a>
+                <a href="carrito.html" class="icon-btn">🛒</a>
 
                 <div class="user-dropdown">
                     <button class="user-btn icon-btn">👤</button>
@@ -64,7 +66,7 @@
             <section class="catalog-section">
                 <div class="catalog-container">
                     <div class="catalog-header">
-                        <a href="artistas.html" class="back-btn">← Volver a Artistas</a>
+                        <button onclick="goBack()" class="back-btn">← Volver</button>
                         <h2 id="albumTitle">Detalles del Álbum</h2>
                         <p id="albumArtist" style="color: #333;">Cargando información...</p>
                     </div>
@@ -78,23 +80,23 @@
                             <div class="album-info">
                                 <h1 id="albumName" style="color: #222;">Cargando...</h1>
                                 <div class="album-meta">
-                                    <span class="meta-item" id="albumYear" style="color: #333; background: #f0f0f0;">Año: --</span>
-                                    <span class="meta-item" id="albumGenre" style="color: #333; background: #f0f0f0;">Género: --</span>
-                                    <span class="meta-item" id="albumTracks" style="color: #333; background: #f0f0f0;">Temas: --</span>
-                                    <span class="meta-item" id="albumDuration" style="color: #333; background: #f0f0f0;">Duración: --</span>
+                                    <span class="meta-item" id="albumYear">Año: --</span>
+                                    <span class="meta-item" id="albumGenre">Género: --</span>
+                                    <span class="meta-item" id="albumTracks">Temas: --</span>
+                                    <span class="meta-item" id="albumDuration">Duración: --</span>
                                 </div>
-                                <p id="albumDescription" class="album-description" style="color: #444;"></p>
-                                <div class="album-price" style="color: #8b0000; font-weight: bold;">$599 MXN</div>
+                                <p id="albumDescription" class="album-description"></p>
+                                <div class="album-price" style="font-weight: bold;" id="albumPriceDisplay">$ -- MXN</div>
                                 <div class="album-actions">
-                                    <button class="buy-btn" id="buyAlbumBtn" style="background: #8b0000; color: white;">Añadir al carrito</button>
-                                    <button class="favorite-btn" id="favoriteBtn" style="color: #333; border: 1px solid #ccc;">❤️ Agregar a Favoritos</button>
+                                    <button class="buy-btn" id="buyAlbumBtn">Añadir álbum al carrito</button>
+                                    <button class="favorite-btn" id="favoriteBtn">❤️ Agregar a Favoritos</button>
                                 </div>
                             </div>
                         </div>
 
                         <!-- CALIFICACIÓN -->
-                        <div class="rating-section" style="background: #f9f9f9; border: 1px solid #ddd;">
-                            <h3 style="color: #222;">Califica este álbum</h3>
+                        <div class="rating-section">
+                            <h3>Califica este álbum</h3>
                             <div class="rating-stars">
                                 <span class="star" data-rating="1">★</span>
                                 <span class="star" data-rating="2">★</span>
@@ -102,18 +104,18 @@
                                 <span class="star" data-rating="4">★</span>
                                 <span class="star" data-rating="5">★</span>
                             </div>
-                            <div class="rating-display" style="color: #333;">
-                                <span id="currentRating" style="color: #8b0000; font-weight: bold;">0.0</span> / 5.0
+                            <div class="rating-display">
+                                <span id="currentRating" style="font-weight: bold;">0.0</span> / 5.0
                                 <span id="ratingCount">(0 calificaciones)</span>
                             </div>
                             <div class="rating-actions">
-                                <button id="submitRatingBtn" class="submit-rating-btn" style="background: #333; color: white;">Enviar Calificación</button>
+                                <button id="submitRatingBtn" class="submit-rating-btn">Enviar Calificación</button>
                             </div>
                         </div>
 
                         <!-- LISTA DE CANCIONES -->
                         <div class="songs-section">
-                            <h3 style="color: #222; border-bottom: 2px solid #8b0000;">Lista de Canciones</h3>
+                            <h3>Lista de Canciones</h3>
                             <div id="songsList" class="songs-list">
                                 <p style="color: #666; text-align: center; padding: 20px;">Cargando canciones...</p>
                             </div>
@@ -131,15 +133,29 @@
 
     <!-- SCRIPTS -->
     <script>
+        // ==================== DEBUG ====================
+
+console.log('=== CANCIONES.HHTML DEBUG ===');
+console.log('lastAlbumPage:', sessionStorage.getItem('lastAlbumPage'));
+console.log('artistasPageState:', sessionStorage.getItem('artistasPageState'));
+console.log('selectedAlbum:', localStorage.getItem('selectedAlbum'));
         // Variables globales
         let currentAlbum = null;
         let userRating = 0;
         let isFavorite = false;
         let currentUserId = null;
+        let albumSongs = [];
 
-        // ==================== FUNCIONES BÁSICAS DEL ÁLBUM ====================
+        // ==================== FUNCIONES BÁSICAS ====================
 
-        // Cargar datos del álbum desde localStorage
+        // Función para volver atrás
+      function goBack() {
+    const lastPage = sessionStorage.getItem('lastAlbumPage') || 'index.html';
+    console.log('DEBUG - Volviendo a:', lastPage);
+    console.log('DEBUG - lastAlbumPage en sessionStorage:', sessionStorage.getItem('lastAlbumPage'));
+    window.location.href = lastPage;
+}
+        // Cargar datos del álbum
         function loadAlbumData() {
             console.log('Cargando datos del álbum...');
             
@@ -147,9 +163,9 @@
             
             if (!albumData) {
                 console.error('No hay datos de álbum en localStorage');
-                showErrorMessage('No se encontró información del álbum. Volviendo a artistas...');
+                showErrorMessage('No se encontró información del álbum. Volviendo...');
                 setTimeout(() => {
-                    window.location.href = 'artistas.html';
+                    goBack();
                 }, 3000);
                 return;
             }
@@ -158,32 +174,22 @@
                 currentAlbum = JSON.parse(albumData);
                 console.log('Álbum cargado:', currentAlbum);
                 
-                // Primero mostrar detalles del álbum
                 displayAlbumDetails();
                 loadSongs();
-                
-                // Configurar sistema de calificación
                 setupRatingSystem();
-                
-                // Configurar botones
                 setupButtons();
                 
-                // Luego intentar obtener ID del usuario y cargar calificación
-                getUserId().then(userId => {
-                    if (userId) {
-                        currentUserId = userId;
-                        console.log('ID de usuario obtenido:', currentUserId);
-                        // Cargar calificación después de un pequeño retraso
-                        setTimeout(() => {
-                            loadRatingFromDB();
-                            checkFavoriteStatus();
-                        }, 500);
-                    } else {
-                        console.log('Usuario no autenticado o error al obtener ID');
-                    }
-                }).catch(error => {
-                    console.error('Error al obtener ID de usuario:', error);
-                });
+                // Obtener ID de usuario
+                currentUserId = localStorage.getItem('userId');
+                if (currentUserId) {
+                    console.log('ID de usuario obtenido:', currentUserId);
+                    setTimeout(() => {
+                        loadRatingFromDB();
+                        checkFavoriteStatus();
+                    }, 500);
+                } else {
+                    console.log('Usuario no autenticado');
+                }
                 
             } catch (error) {
                 console.error('Error al parsear datos del álbum:', error);
@@ -193,10 +199,7 @@
 
         // Mostrar detalles del álbum
         function displayAlbumDetails() {
-            if (!currentAlbum) {
-                console.error('No hay datos de álbum para mostrar');
-                return;
-            }
+            if (!currentAlbum) return;
 
             console.log('Mostrando detalles del álbum:', currentAlbum);
             
@@ -212,6 +215,10 @@
             document.getElementById('albumDuration').textContent = `Duración: ${formatDuration(currentAlbum.duracion) || '--:--'}`;
             document.getElementById('albumDescription').textContent = currentAlbum.descripcion || 'Sin descripción disponible';
             
+            // Precio
+            const albumPrice = currentAlbum.precio ? parseFloat(currentAlbum.precio) : 599;
+            document.getElementById('albumPriceDisplay').textContent = `$${albumPrice.toFixed(2)} MXN`;
+            
             // Imagen del álbum
             const albumCover = document.getElementById('albumCover');
             if (currentAlbum.images && currentAlbum.images.mainImage) {
@@ -219,14 +226,11 @@
                 albumCover.alt = `Portada de ${currentAlbum.titulo}`;
                 albumCover.onerror = function() {
                     this.src = 'images/placeholder.png';
-                    console.log('Imagen no cargada, usando placeholder');
                 };
             } else {
                 albumCover.src = 'images/placeholder.png';
                 albumCover.alt = 'Portada no disponible';
             }
-            
-            console.log('Detalles del álbum mostrados correctamente');
         }
 
         // Formatear duración
@@ -234,7 +238,6 @@
             if (!duration) return '--:--';
             
             try {
-                // Si es un número (segundos), convertirlo a mm:ss
                 if (!isNaN(duration) && duration.toString().indexOf(':') === -1) {
                     const minutes = Math.floor(duration / 60);
                     const seconds = duration % 60;
@@ -242,10 +245,146 @@
                 }
                 return duration;
             } catch (error) {
-                console.error('Error formateando duración:', error);
                 return '--:--';
             }
         }
+
+        // ==================== FUNCIONES DEL CARRITO ====================
+
+        // Función para agregar al carrito desde canciones.html
+        async function addToCartFromCanciones(productId, productName, price, productType = 'album', event = null) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            
+            const userId = localStorage.getItem('userId');
+            
+            if (!userId) {
+                alert('Debes iniciar sesión para agregar productos al carrito');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            const precioNumero = parseFloat(price);
+            if (isNaN(precioNumero) || precioNumero <= 0) {
+                alert('Precio inválido para este producto');
+                return;
+            }
+            
+            try {
+                console.log(`Agregando ${productType} al carrito:`, { 
+                    productId, 
+                    productName, 
+                    price: precioNumero, 
+                    userId 
+                });
+                
+                const response = await fetch('api.php?action=addToCart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: parseInt(userId),
+                        tipo: productType,
+                        id_producto: parseInt(productId),
+                        precio: precioNumero,
+                        cantidad: 1
+                    })
+                });
+                
+                const result = await response.json();
+                console.log('Resultado:', result);
+                
+                if (result.success) {
+                    // Feedback visual similar a albumes.html
+                    if (event && event.target) {
+                        const button = event.target;
+                        const originalText = button.textContent;
+                        button.textContent = productType === 'album' ? '✓ Álbum añadido' : '✓ Canción añadida';
+                        button.style.background = '#4CAF50';
+                        button.style.color = 'white';
+                        button.disabled = true;
+                        
+                        setTimeout(() => {
+                            button.textContent = originalText;
+                            button.style.background = '';
+                            button.style.color = '';
+                            button.disabled = false;
+                        }, 1500);
+                    }
+                    
+                    // Mostrar notificación
+                    showNotification(productType === 'album' ? 'Álbum agregado al carrito' : 'Canción agregada al carrito');
+                    
+                    // Actualizar contador del carrito
+                    if (typeof updateCartCount === 'function') {
+                        updateCartCount();
+                    }
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error agregando al carrito:', error);
+                alert('Error de conexión al servidor');
+            }
+        }
+
+        // Función para mostrar notificaciones
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4CAF50;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 4px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Agregar estilos de animación
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // ==================== FUNCIONES DE CANCIONES ====================
 
         // Cargar canciones desde la API
         function loadSongs() {
@@ -285,7 +424,8 @@
                         return;
                     }
                     
-                    displaySongs(data.canciones);
+                    albumSongs = data.canciones;
+                    displaySongs(albumSongs);
                 })
                 .catch(error => {
                     console.error('Error al cargar canciones:', error);
@@ -299,52 +439,45 @@
         
         // Mostrar canciones en la tabla
         function displaySongs(canciones) {
-            const songsList = document.getElementById('songsList');
-            
-            let songsHTML = `
-                <table class="songs-table">
-                    <thead style="background: #f5f5f5; color: #333;">
-                        <tr>
-                            <th style="text-align: center; padding: 15px; font-weight: bold; width: 60px;">#</th>
-                            <th style="text-align: left; padding: 15px; font-weight: bold;">Título</th>
-                            <th style="text-align: center; padding: 15px; font-weight: bold; width: 100px;">Duración</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            canciones.forEach((cancion, index) => {
-                let duracionFormateada = cancion.duracion || '--:--';
-                
-                if (duracionFormateada && !isNaN(duracionFormateada) && duracionFormateada.toString().indexOf(':') === -1) {
-                    const minutos = Math.floor(duracionFormateada / 60);
-                    const segundos = duracionFormateada % 60;
-                    duracionFormateada = `${minutos}:${segundos.toString().padStart(2, '0')}`;
-                }
-                
-                songsHTML += `
-                    <tr class="song-item">
-                        <td class="song-number" style="text-align: center; color: #666; font-weight: bold; padding: 12px;">
-                            ${index + 1}
-                        </td>
-                        <td class="song-title" style="padding: 12px; color: #222; font-size: 16px;">
-                            ${cancion.titulo || `Canción ${index + 1}`}
-                        </td>
-                        <td class="song-duration" style="text-align: center; color: #666; padding: 12px; font-size: 14px;">
-                            ${duracionFormateada}
-                        </td>
-                    </tr>
-                `;
-            });
-            
-            songsHTML += `
-                    </tbody>
-                </table>
-            `;
-            
-            songsList.innerHTML = songsHTML;
-            console.log(`Mostradas ${canciones.length} canciones`);
+    const songsList = document.getElementById('songsList');
+
+    let songsHTML = `
+        <table class="songs-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Título</th>
+                    <th>Duración</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    canciones.forEach((cancion, index) => {
+        let duracionFormateada = cancion.duracion || '--:--';
+
+        if (!isNaN(duracionFormateada) && duracionFormateada.toString().indexOf(':') === -1) {
+            const minutos = Math.floor(duracionFormateada / 60);
+            const segundos = duracionFormateada % 60;
+            duracionFormateada = `${minutos}:${segundos.toString().padStart(2, '0')}`;
         }
+
+        songsHTML += `
+            <tr class="song-item">
+                <td class="song-number">${index + 1}</td>
+                <td class="song-title">${cancion.titulo || `Canción ${index + 1}`}</td>
+                <td class="song-duration">${duracionFormateada}</td>
+            </tr>
+        `;
+    });
+
+    songsHTML += `
+            </tbody>
+        </table>
+    `;
+
+    songsList.innerHTML = songsHTML;
+}
 
         // ==================== SISTEMA DE CALIFICACIÓN ====================
 
@@ -355,16 +488,10 @@
             const stars = document.querySelectorAll('.star');
             const submitBtn = document.getElementById('submitRatingBtn');
             
-            // Inicializar estrellas en gris
-            stars.forEach(star => {
-                star.style.color = '#ccc';
-                star.style.textShadow = 'none';
-            });
-            
             // Eventos para estrellas
             stars.forEach(star => {
                 star.addEventListener('mouseover', function() {
-                    if (userRating === 0) { // Solo hover si no hay calificación
+                    if (userRating === 0) {
                         const rating = parseInt(this.getAttribute('data-rating'));
                         highlightStars(rating);
                     }
@@ -372,13 +499,8 @@
                 
                 star.addEventListener('mouseout', function() {
                     if (userRating === 0) {
-                        // Resetear a gris si no hay calificación
-                        stars.forEach(s => {
-                            s.style.color = '#ccc';
-                            s.style.textShadow = 'none';
-                        });
+                        resetStars();
                     } else {
-                        // Mantener calificación actual
                         highlightStars(userRating);
                     }
                 });
@@ -393,67 +515,32 @@
             
             // Botón para enviar calificación
             submitBtn.addEventListener('click', submitRatingToDB);
-            
-            console.log('Sistema de calificación configurado');
         }
 
         // Resaltar estrellas
-        // Resaltar estrellas - VERSIÓN SIMPLIFICADA
-function highlightStars(rating) {
-    const stars = document.querySelectorAll('.star');
-    
-    stars.forEach(star => {
-        const starRating = parseInt(star.getAttribute('data-rating'));
-        
-        // Primero quitamos todas las clases
-        star.classList.remove('selected', 'hover');
-        
-        // Aplicamos estilos directamente
-        if (starRating <= rating) {
-            star.style.color = '#ffd700'; // DORADO
-            star.style.textShadow = '0 0 10px rgba(255, 215, 0, 0.7)';
-            star.classList.add('selected');
-        } else {
-            star.style.color = '#ccc'; // GRIS
-            star.style.textShadow = '0 1px 3px rgba(0,0,0,0.1)';
-        }
-    });
-    
-    console.log('Estrellas resaltadas:', rating);
-}
-
-        // Obtener ID del usuario
-        async function getUserId() {
-            const userEmail = localStorage.getItem('userEmail');
-            if (!userEmail) {
-                console.log('Usuario no autenticado');
-                return null;
-            }
-
-            try {
-                const response = await fetch('api.php?action=getUserId', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: userEmail })
-                });
+        function highlightStars(rating) {
+            const stars = document.querySelectorAll('.star');
+            
+            stars.forEach(star => {
+                const starRating = parseInt(star.getAttribute('data-rating'));
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    console.log('ID de usuario obtenido:', data.userId);
-                    return data.userId;
+                if (starRating <= rating) {
+                    star.style.color = '#ffd700';
+                    star.style.textShadow = '0 0 10px rgba(255, 215, 0, 0.7)';
                 } else {
-                    console.log('Error al obtener ID de usuario:', data.message);
-                    return null;
+                    star.style.color = '#ccc';
+                    star.style.textShadow = 'none';
                 }
-            } catch (error) {
-                console.error('Error en getUserId:', error);
-                return null;
-            }
+            });
+        }
+
+        // Resetear estrellas
+        function resetStars() {
+            const stars = document.querySelectorAll('.star');
+            stars.forEach(star => {
+                star.style.color = '#ccc';
+                star.style.textShadow = 'none';
+            });
         }
 
         // Cargar calificación desde la base de datos
@@ -467,11 +554,6 @@ function highlightStars(rating) {
                 console.log(`Cargando calificación para usuario ${currentUserId}, álbum ${currentAlbum.id}`);
                 
                 const response = await fetch(`api.php?action=getRating&userId=${currentUserId}&albumId=${currentAlbum.id}`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
                 const data = await response.json();
                 console.log('Respuesta de calificación:', data);
                 
@@ -479,7 +561,6 @@ function highlightStars(rating) {
                     userRating = parseInt(data.calificacion);
                     console.log('Calificación cargada:', userRating);
                     
-                    // Actualizar estrellas
                     highlightStars(userRating);
                     document.getElementById('currentRating').textContent = userRating.toFixed(1);
                 } else {
@@ -487,7 +568,6 @@ function highlightStars(rating) {
                     console.log('No hay calificación guardada');
                 }
                 
-                // Cargar estadísticas
                 await loadRatingStats();
                 
             } catch (error) {
@@ -502,9 +582,6 @@ function highlightStars(rating) {
 
             try {
                 const response = await fetch(`api.php?action=getRatingStats&albumId=${currentAlbum.id}`);
-                
-                if (!response.ok) return;
-                
                 const data = await response.json();
                 
                 if (data.success) {
@@ -542,16 +619,11 @@ function highlightStars(rating) {
                         rating: userRating
                     })
                 });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
                 
                 const result = await response.json();
                 
                 if (result.success) {
                     alert(`¡Gracias por calificar con ${userRating} estrellas!`);
-                    // Recargar estadísticas
                     await loadRatingStats();
                 } else {
                     alert('Error al guardar la calificación: ' + result.message);
@@ -570,9 +642,6 @@ function highlightStars(rating) {
 
             try {
                 const response = await fetch(`api.php?action=checkFavorite&userId=${currentUserId}&albumId=${currentAlbum.id}`);
-                
-                if (!response.ok) return;
-                
                 const data = await response.json();
                 
                 if (data.success) {
@@ -597,13 +666,13 @@ function highlightStars(rating) {
             } else {
                 favoriteBtn.textContent = '❤️ Agregar a Favoritos';
                 favoriteBtn.style.backgroundColor = '';
-                favoriteBtn.style.color = '#333';
-                favoriteBtn.style.borderColor = '#ccc';
+                favoriteBtn.style.color = '';
+                favoriteBtn.style.borderColor = '';
             }
         }
 
         // Alternar favorito
-        async function addToFavorites() {
+        async function toggleFavorite() {
             if (!currentUserId) {
                 alert('Debes iniciar sesión para agregar a favoritos');
                 window.location.href = 'login.html';
@@ -621,10 +690,6 @@ function highlightStars(rating) {
                         albumId: albumId
                     })
                 });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
                 
                 const result = await response.json();
                 
@@ -646,21 +711,33 @@ function highlightStars(rating) {
         // Configurar botones
         function setupButtons() {
             const favoriteBtn = document.getElementById('favoriteBtn');
-            const buyBtn = document.getElementById('buyAlbumBtn');
+            const buyAlbumBtn = document.getElementById('buyAlbumBtn');
+            const logoutBtn = document.getElementById('logoutBtnDropdown');
             
             if (favoriteBtn) {
-                favoriteBtn.addEventListener('click', addToFavorites);
+                favoriteBtn.addEventListener('click', toggleFavorite);
             }
             
-            if (buyBtn) {
-                buyBtn.addEventListener('click', buyAlbum);
+            if (buyAlbumBtn) {
+                buyAlbumBtn.addEventListener('click', function(e) {
+                    const albumId = currentAlbum.id;
+                    const albumName = currentAlbum.titulo;
+                    const albumPrice = currentAlbum.precio ? parseFloat(currentAlbum.precio) : 599;
+                    
+                    addToCartFromCanciones(albumId, albumName, albumPrice, 'album', e);
+                });
             }
-        }
-
-        // Comprar álbum
-        function buyAlbum() {
-            if (!currentAlbum) return;
-            alert(`Comprando álbum: ${currentAlbum.titulo}\nPrecio: $599 MXN`);
+            
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    localStorage.removeItem("userEmail");
+                    localStorage.removeItem("userName");
+                    localStorage.removeItem("userId");
+                    localStorage.removeItem("userRole");
+                    alert("Sesión cerrada correctamente");
+                    window.location.href = "index.html";
+                });
+            }
         }
 
         // Mostrar mensaje de error
@@ -669,42 +746,36 @@ function highlightStars(rating) {
             if (!container) return;
             
             container.innerHTML = `
-                <div class="error-message" style="color: #8b0000; text-align: center; padding: 60px 20px;">
-                    <h2 style="color: #8b0000; font-size: 32px; margin-bottom: 20px;">Error</h2>
-                    <p style="font-size: 18px;">${message}</p>
-                    <a href="artistas.html" class="back-btn" style="margin-top: 20px; display: inline-block;">
-                        ← Volver a Artistas
-                    </a>
+                <div class="error-message">
+                    <h2>Error</h2>
+                    <p>${message}</p>
+                    <button onclick="goBack()" class="back-btn">← Volver</button>
                 </div>
             `;
+        }
+
+        // Mostrar información del usuario
+        function displayUserInfo() {
+            const userNameDisplay = document.getElementById('userNameDisplay');
+            const userEmailDisplay = document.getElementById('userEmailDisplay');
+            
+            if (userNameDisplay && userEmailDisplay) {
+                userNameDisplay.textContent = localStorage.getItem('userName') || 'Usuario';
+                userEmailDisplay.textContent = localStorage.getItem('userEmail') || 'No logueado';
+            }
         }
 
         // ==================== INICIALIZACIÓN ====================
 
         // Inicializar cuando se carga la página
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM cargado, inicializando página de canciones...');
+            console.log('Página canciones.html cargada');
             
-            // Configurar historial
-            history.pushState({ page: 'albumDetails' }, '', 'canciones.html');
+            // Mostrar información del usuario
+            displayUserInfo();
             
-            // Manejar botón de retroceso
-            window.addEventListener('popstate', function(event) {
-                if (document.referrer && document.referrer.includes('artistas.html')) {
-                    window.location.href = 'artistas.html';
-                }
-            });
-
             // Cargar datos del álbum
             loadAlbumData();
-            
-            // Manejar recarga desde cache (back/forward)
-            window.addEventListener('pageshow', function(event) {
-                if (event.persisted) {
-                    console.log('Página cargada desde cache, recargando...');
-                    loadAlbumData();
-                }
-            });
         });
 
     </script>
@@ -714,48 +785,12 @@ function highlightStars(rating) {
     
     <!-- Estilos específicos para canciones.html -->
     <style>
-        /* LIMPIAR ESTILOS CONFLICTIVOS */
-.rating-stars * {
-    all: unset; /* Resetea estilos heredados */
-    display: inline-block;
-}
-
-.rating-stars .star {
-    all: revert; /* Vuelve a valores por defecto pero sin !important problemáticos */
-    color: #ccc !important;
-    font-size: 50px;
-    cursor: pointer;
-}
-
-/* Sobrescribir específicamente */
-.rating-stars .star.selected,
-.rating-stars .star[style*="ffd700"],
-.rating-stars .star[style*="yellow"] {
-    color: #ffd700 !important;
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6) !important;
-}
-
-        /* Asegurar que todo el texto sea visible */
-        .catalog-section h2,
-        .catalog-section p,
-        .album-info h1,
-        .album-description,
-        .rating-section h3,
-        .songs-section h3,
-        .song-title,
-        .song-number,
-        .song-duration,
-        .rating-display,
-        .album-meta .meta-item {
-            color: #333 !important;
-        }
-        
-        /* Estilos generales para la página */
+        /* Botón de volver */
         .back-btn {
             display: inline-block;
             padding: 10px 20px;
-            background: #8b0000;
-            color: white !important;
+            background: #ff0000;
+            color: white;
             text-decoration: none;
             border: none;
             border-radius: 4px;
@@ -767,19 +802,21 @@ function highlightStars(rating) {
         }
         
         .back-btn:hover {
-            background: #a00000;
-            color: white !important;
+            background: #ff0303;
+            color: white;
             text-decoration: none;
         }
         
+        /* Contenedor principal */
         .album-details-container {
             background: white;
             border-radius: 8px;
             padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgb(255, 0, 0);
             margin-top: 20px;
         }
         
+        /* Encabezado del álbum */
         .album-header {
             display: flex;
             gap: 30px;
@@ -793,7 +830,7 @@ function highlightStars(rating) {
         .album-cover img {
             width: 100%;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgb(255, 0, 0);
         }
         
         .album-info {
@@ -802,7 +839,7 @@ function highlightStars(rating) {
         
         .album-info h1 {
             margin: 0 0 10px 0;
-            color: #222 !important;
+            color: #f60707;
             font-size: 32px;
         }
         
@@ -817,21 +854,20 @@ function highlightStars(rating) {
             background: #f0f0f0;
             border-radius: 4px;
             font-size: 14px;
-            color: #333 !important;
+            color: #ff0000;
             border: 1px solid #ddd;
         }
         
         .album-description {
             line-height: 1.6;
-            color: #444 !important;
+            color: #f70202;
             margin: 20px 0;
             font-size: 16px;
         }
         
         .album-price {
             font-size: 28px;
-            font-weight: bold;
-            color: #8b0000 !important;
+            color: #ff0707;
             margin: 25px 0;
         }
         
@@ -841,122 +877,104 @@ function highlightStars(rating) {
             margin-top: 30px;
         }
         
-        .buy-btn {
-            padding: 12px 30px;
-            background: #8b0000 !important;
-            color: white !important;
+        /* Botones */
+        .buy-btn, .favorite-btn, .submit-rating-btn, .buy-song-btn {
+            padding: 12px 25px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
-            transition: background 0.3s;
-        }
-        
-        .buy-btn:hover {
-            background: #a00000 !important;
-        }
-        
-        .favorite-btn {
-            padding: 12px 25px;
-            background: white;
-            border: 1px solid #ddd !important;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            color: #333 !important;
             transition: all 0.3s;
         }
         
-        .favorite-btn:hover {
-            background: #f9f9f9;
-            border-color: #8b0000 !important;
+        .buy-btn {
+            background: #f30101;
+            color: white;
         }
         
+        .buy-btn:hover {
+            background: #ff0303;
+        }
+        
+        .favorite-btn {
+            background: white;
+            border: 1px solid #ddd;
+            color: #ff0000;
+        }
+        
+        .favorite-btn:hover {
+            background: #f80101;
+            border-color: #ff0404;
+        }
+        
+        /* Sección de calificación */
         .rating-section {
             margin: 40px 0;
             padding: 25px;
-            background: #f9f9f9 !important;
+            background: #f9f9f9;
             border-radius: 8px;
-            border: 1px solid #ddd !important;
+            border: 1px solid #ddd;
         }
         
         .rating-section h3 {
             margin-top: 0;
-            color: #222 !important;
+            color: #f70505;
             font-size: 24px;
             margin-bottom: 20px;
         }
         
         .rating-stars {
-    font-size: 36px;
-    margin: 20px 0;
-    cursor: pointer;
-}
-
-/* Estrellas por defecto: blancas */
-.rating-stars .star {
-    font-size: 40px;
-    cursor: pointer;
-    color: #fff; /* blanco */
-    transition: color 0.2s, transform 0.2s;
-}
-
-/* Estrella amarilla cuando se pasa el mouse o se selecciona */
-.rating-stars .star.hover,
-.rating-stars .star.selected {
-    color: #ffd700;  /* amarillo */
-    text-shadow: 0 0 8px #ffd700;
-}
-
-/* Pequeña animación al pasar el mouse */
-.rating-stars .star:hover {
-    transform: scale(1.1);
-}
-
+            font-size: 36px;
+            margin: 20px 0;
+            cursor: pointer;
+        }
         
-        /* El color dorado se aplica directamente con JavaScript */
+        .rating-stars .star {
+            color: #ccc;
+            transition: color 0.2s;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        
+        .rating-stars .star:hover {
+            color: #ffd700;
+        }
         
         .rating-display {
             font-size: 20px;
             margin: 15px 0 25px 0;
-            color: white !important;
+            color: #ff0000;
         }
         
         .rating-display #currentRating {
-            font-weight: bold;
-            color: #8b0000 !important;
+            color: #ff0000;
             font-size: 24px;
         }
         
         .submit-rating-btn {
-            padding: 12px 30px;
-            background: #333 !important;
-            color: white !important;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
+            background: #ff0000;
+            color: white;
         }
         
         .submit-rating-btn:hover {
-            background: #8b0000 !important;
+            background: #ff0000;
         }
         
+        /* Sección de canciones */
         .songs-section {
             margin-top: 50px;
         }
         
         .songs-section h3 {
             margin-bottom: 25px;
-            color: #222 !important;
+            color: #222;
             font-size: 24px;
-            border-bottom: 2px solid #8b0000;
+            border-bottom: 2px solid #ff0000;
             padding-bottom: 10px;
         }
         
-        /* Estilos para la tabla de canciones SIN columna de Acciones */
+        /* Tabla de canciones */
         .songs-table {
             width: 100%;
             border-collapse: collapse;
@@ -964,7 +982,7 @@ function highlightStars(rating) {
             background: white;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgb(255, 0, 0);
         }
         
         .songs-table thead {
@@ -975,22 +993,8 @@ function highlightStars(rating) {
             text-align: left;
             padding: 15px;
             font-weight: bold;
-            color: #333 !important;
+            color: #333;
             border-bottom: 2px solid #8b0000;
-        }
-        
-        .songs-table th:nth-child(1) { /* Columna # */
-            width: 60px;
-            text-align: center;
-        }
-        
-        .songs-table th:nth-child(2) { /* Columna Título */
-            text-align: left;
-        }
-        
-        .songs-table th:nth-child(3) { /* Columna Duración */
-            width: 100px;
-            text-align: center;
         }
         
         .song-item {
@@ -1002,31 +1006,77 @@ function highlightStars(rating) {
             background: #f9f9f9;
         }
         
-        .song-item:last-child {
-            border-bottom: none;
+        .song-item td {
+            padding: 12px 15px;
         }
         
         .song-number {
             width: 60px;
             text-align: center;
-            color: #666 !important;
-            padding: 12px;
+            color: #666;
             font-weight: bold;
         }
         
         .song-title {
-            padding: 12px;
             font-weight: 500;
             font-size: 16px;
-            color: #222 !important;
+            color: #222;
         }
         
         .song-duration {
             width: 100px;
             text-align: center;
-            color: #666 !important;
-            padding: 12px;
+            color: #666;
             font-size: 14px;
+        }
+        
+        .song-price {
+            width: 120px;
+            text-align: center;
+            color: #8b0000;
+            font-weight: bold;
+        }
+        
+        .song-actions {
+            width: 150px;
+            text-align: center;
+        }
+        
+        .buy-song-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .buy-song-btn:hover {
+            background: #45a049;
+        }
+        
+        /* Botón de compra cuando está deshabilitado */
+        .buy-song-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        /* Mensajes de error */
+        .error-message {
+            color: #8b0000;
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .error-message h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        
+        .error-message p {
+            font-size: 18px;
         }
         
         /* Responsive */
@@ -1041,27 +1091,17 @@ function highlightStars(rating) {
                 margin: 0 auto 20px;
             }
             
-            .album-info {
-                min-width: 100%;
-            }
-            
             .album-actions {
                 flex-direction: column;
             }
             
-            .buy-btn, .favorite-btn {
-                width: 100%;
-                text-align: center;
-            }
-            
-            .song-title {
+            .songs-table {
                 font-size: 14px;
             }
             
-            .song-number,
-            .song-duration {
-                font-size: 12px;
-                padding: 10px;
+            .songs-table th,
+            .songs-table td {
+                padding: 8px;
             }
         }
         
@@ -1070,49 +1110,14 @@ function highlightStars(rating) {
                 max-width: 200px;
             }
             
-            .album-info h1 {
-                font-size: 24px;
-            }
-            
             .album-meta {
                 flex-direction: column;
                 gap: 8px;
             }
             
-            .rating-stars {
-                font-size: 28px;
-            }
-            
-            .song-item {
-                display: grid;
-                grid-template-columns: 50px 1fr 80px;
-                grid-template-areas: "number title duration";
-                padding: 10px;
-                border-bottom: 1px solid #eee;
-            }
-            
-            .song-number {
-                grid-area: number;
-                text-align: center;
-                padding: 0;
-                align-self: center;
-            }
-            
-            .song-title {
-                grid-area: title;
-                padding: 0 10px;
-                align-self: center;
-            }
-            
-            .song-duration {
-                grid-area: duration;
-                text-align: center;
-                padding: 0;
-                align-self: center;
-            }
-            
-            .songs-table thead {
-                display: none;
+            .songs-table {
+                display: block;
+                overflow-x: auto;
             }
         }
     </style>
