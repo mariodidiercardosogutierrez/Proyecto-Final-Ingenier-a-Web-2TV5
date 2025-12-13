@@ -249,9 +249,480 @@
             }
         }
         
-        function checkoutSimple() {
-            alert('Funcionalidad de pago en desarrollo. ¡Gracias por tu compra!');
+        async function checkoutSimple() {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+        alert('Por favor, inicia sesión para proceder con el pago');
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    try {
+        // 1. Obtener las tarjetas del usuario
+        const cardsResponse = await fetch(`api.php?action=getUserCards&userId=${userId}`);
+        const cardsData = await cardsResponse.json();
+        
+        if (!cardsData.success || !cardsData.cards || cardsData.cards.length === 0) {
+            // Si no tiene tarjetas, preguntar si quiere agregar una
+            const addCard = confirm('No tienes tarjetas registradas. ¿Te gustaría agregar una ahora?');
+            if (addCard) {
+                window.location.href = 'tarjetas.html';
+            } else {
+                alert('Necesitas una tarjeta registrada para realizar la compra');
+            }
+            return;
         }
+        
+        // 2. Mostrar modal para seleccionar tarjeta
+        showCardSelectionModal(cardsData.cards);
+        
+    } catch (error) {
+        console.error('Error cargando tarjetas:', error);
+        alert('Error al cargar las tarjetas. Intenta nuevamente.');
+    }
+}
+
+// Función para mostrar modal de selección de tarjeta
+function showCardSelectionModal(cards) {
+    // Crear modal
+    const modalHTML = `
+        <div id="cardSelectionModal" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        ">
+            <div style="
+                background: white;
+                padding: 30px;
+                border-radius: 8px;
+                max-width: 500px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+            ">
+                <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                ">
+                    <h3 style="margin: 0; color: #333;">Seleccionar Tarjeta</h3>
+                    <button id="closeModalBtn" style="
+                        background: none;
+                        border: none;
+                        font-size: 24px;
+                        cursor: pointer;
+                        color: #666;
+                    ">×</button>
+                </div>
+                
+                <p style="color: #666; margin-bottom: 25px;">
+                    Selecciona una tarjeta registrada o agrega una nueva
+                </p>
+                
+                <div id="cardsList" style="margin-bottom: 25px; max-height: 300px; overflow-y: auto;">
+                    ${cards.map((card, index) => `
+                        <div class="card-option" data-id="${card.id_tarjeta}" style="
+                            border: 1px solid #ddd;
+                            border-radius: 6px;
+                            padding: 15px;
+                            margin-bottom: 10px;
+                            cursor: pointer;
+                            transition: border-color 0.3s, background 0.3s;
+                        " onclick="selectCard(${card.id_tarjeta})">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong>${card.nombre_titular}</strong>
+                                    <div style="color: #666; font-size: 14px; margin-top: 5px;">
+                                        **** **** **** ${card.numero_tarjeta.slice(-4)}
+                                    </div>
+                                    <div style="color: #888; font-size: 12px; margin-top: 5px;">
+                                        Expira: ${card.mes_exp}/${card.anio_exp}
+                                    </div>
+                                </div>
+                                <div class="card-check" id="check-${card.id_tarjeta}" style="
+                                    display: none;
+                                    color: #8b0000;
+                                    font-size: 20px;
+                                ">✓</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <button id="useSelectedCardBtn" style="
+                        flex: 2;
+                        background: #8b0000;
+                        color: white;
+                        border: none;
+                        padding: 12px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        display: none;
+                    ">
+                        Usar Tarjeta Seleccionada
+                    </button>
+                    
+                    <button id="addNewCardBtn" style="
+                        flex: 1;
+                        background: #f0f0f0;
+                        color: #333;
+                        border: 1px solid #ddd;
+                        padding: 12px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    ">
+                        ＋ Agregar Nueva
+                    </button>
+                </div>
+                
+                <div style="text-align: center; color: #888; font-size: 12px;">
+                    <em>Tu información de tarjeta está almacenada de forma segura</em>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Configurar eventos
+    setupModalEvents();
+}
+
+// Configurar eventos del modal
+function setupModalEvents() {
+    const modal = document.getElementById('cardSelectionModal');
+    const closeBtn = document.getElementById('closeModalBtn');
+    const useCardBtn = document.getElementById('useSelectedCardBtn');
+    const addNewCardBtn = document.getElementById('addNewCardBtn');
+    
+    // Cerrar modal
+    closeBtn.onclick = function() {
+        modal.remove();
+    };
+    
+    // Cerrar al hacer clic fuera
+    modal.onclick = function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    };
+    
+    // Botón "Usar Tarjeta Seleccionada"
+    useCardBtn.onclick = function() {
+        const selectedCardId = localStorage.getItem('selectedCardId');
+        if (selectedCardId) {
+            processPaymentWithCard(parseInt(selectedCardId));
+            modal.remove();
+        }
+    };
+    
+    // Botón "Agregar Nueva"
+    addNewCardBtn.onclick = function() {
+        const confirmRedirect = confirm('Serás redirigido a la página de tarjetas. ¿Deseas continuar?');
+        if (confirmRedirect) {
+            modal.remove();
+            window.location.href = 'tarjetas.html';
+        }
+    };
+}
+
+// Seleccionar tarjeta
+function selectCard(cardId) {
+    // Limpiar todas las selecciones
+    document.querySelectorAll('.card-option').forEach(card => {
+        card.style.borderColor = '#ddd';
+        card.style.background = 'white';
+    });
+    
+    document.querySelectorAll('.card-check').forEach(check => {
+        check.style.display = 'none';
+    });
+    
+    // Marcar la seleccionada
+    const selectedCard = document.querySelector(`[data-id="${cardId}"]`);
+    const checkIcon = document.getElementById(`check-${cardId}`);
+    
+    if (selectedCard) {
+        selectedCard.style.borderColor = '#8b0000';
+        selectedCard.style.background = '#fff5f5';
+        checkIcon.style.display = 'block';
+        
+        // Guardar en localStorage
+        localStorage.setItem('selectedCardId', cardId);
+        
+        // Mostrar botón para usar tarjeta
+        const useCardBtn = document.getElementById('useSelectedCardBtn');
+        useCardBtn.style.display = 'block';
+    }
+}
+
+// Procesar pago con tarjeta específica
+async function processPaymentWithCard(cardId) {
+    const userId = localStorage.getItem('userId');
+    
+    if (!userId || !cardId) {
+        alert('Error: No se pudo identificar la tarjeta seleccionada');
+        return;
+    }
+    
+    try {
+        // 1. Obtener información del carrito
+        const cartResponse = await fetch(`api.php?action=getCartItems&userId=${userId}`);
+        const cartData = await cartResponse.json();
+        
+        if (!cartData.success || cartData.items.length === 0) {
+            alert('Tu carrito está vacío');
+            return;
+        }
+        
+        // 2. Mostrar confirmación
+        const total = cartData.total;
+        const confirmPayment = confirm(`¿Confirmar compra por $${total} MXN con la tarjeta seleccionada?`);
+        
+        if (!confirmPayment) {
+            return;
+        }
+        
+        // 3. Mostrar mensaje de procesamiento
+        showPaymentProcessingMessage();
+        
+        // 4. Procesar pago
+        const paymentResponse = await fetch('api.php?action=processPayment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: parseInt(userId),
+                cardId: cardId
+            })
+        });
+        
+        const paymentResult = await paymentResponse.json();
+        
+        // 5. Manejar resultado
+        handlePaymentResult(paymentResult);
+        
+    } catch (error) {
+        console.error('Error procesando pago:', error);
+        alert('Error al procesar el pago. Intenta nuevamente.');
+        hidePaymentProcessingMessage();
+    }
+}
+
+// Mostrar mensaje de procesamiento
+function showPaymentProcessingMessage() {
+    const processingHTML = `
+        <div id="paymentProcessing" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        ">
+            <div style="
+                background: white;
+                padding: 40px;
+                border-radius: 8px;
+                text-align: center;
+                max-width: 400px;
+                width: 90%;
+            ">
+                <div style="
+                    width: 60px;
+                    height: 60px;
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #8b0000;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 20px;
+                "></div>
+                <h3 style="color: #333; margin-bottom: 10px;">Procesando Pago...</h3>
+                <p style="color: #666;">Por favor, espera un momento</p>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', processingHTML);
+    
+    // Agregar estilo para la animación
+    if (!document.querySelector('#spinStyle')) {
+        const style = document.createElement('style');
+        style.id = 'spinStyle';
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// Ocultar mensaje de procesamiento
+function hidePaymentProcessingMessage() {
+    const processingDiv = document.getElementById('paymentProcessing');
+    if (processingDiv) {
+        processingDiv.remove();
+    }
+}
+
+// Manejar resultado del pago
+async function handlePaymentResult(result) {
+    hidePaymentProcessingMessage();
+    
+    if (result.success) {
+        // Mostrar modal de éxito
+        const successHTML = `
+            <div id="paymentSuccessModal" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 3000;
+            ">
+                <div style="
+                    background: white;
+                    padding: 40px;
+                    border-radius: 8px;
+                    text-align: center;
+                    max-width: 500px;
+                    width: 90%;
+                ">
+                    <div style="
+                        width: 80px;
+                        height: 80px;
+                        background: #4CAF50;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 auto 20px;
+                        font-size: 40px;
+                        color: white;
+                    ">
+                        ✓
+                    </div>
+                    <h3 style="color: #333; margin-bottom: 15px;">¡Pago Exitoso!</h3>
+                    <p style="color: #666; margin-bottom: 25px;">
+                        Tu compra ha sido procesada correctamente.<br>
+                        Total: <strong>$${result.total} MXN</strong>
+                    </p>
+                    
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button id="viewTicketBtn" style="
+                            background: #8b0000;
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-weight: bold;
+                        ">
+                            Ver Ticket
+                        </button>
+                        
+                        <button id="goToPurchasesBtn" style="
+                            background: #f0f0f0;
+                            color: #333;
+                            border: 1px solid #ddd;
+                            padding: 12px 24px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                        ">
+                            Ver Mis Compras
+                        </button>
+                    </div>
+                    
+                    <p style="margin-top: 20px; color: #888; font-size: 12px;">
+                        Se ha enviado un correo de confirmación a tu email
+                    </p>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', successHTML);
+        
+        // Configurar eventos del modal de éxito
+        document.getElementById('viewTicketBtn').onclick = function() {
+            if (result.ticket_url) {
+                window.open(result.ticket_url, '_blank');
+            } else {
+                generateTicket(result.compraId);
+            }
+        };
+        
+        document.getElementById('goToPurchasesBtn').onclick = function() {
+            window.location.href = 'compras.html';
+        };
+        
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('paymentSuccessModal').onclick = function(e) {
+            if (e.target === this) {
+                this.remove();
+                // Recargar carrito
+                loadCartSimple();
+            }
+        };
+        
+        // Limpiar tarjeta seleccionada del localStorage
+        localStorage.removeItem('selectedCardId');
+        
+    } else {
+        alert('Error en el pago: ' + result.message);
+    }
+}
+
+// Generar ticket (función auxiliar)
+async function generateTicket(compraId) {
+    const userId = localStorage.getItem('userId');
+    
+    try {
+        const response = await fetch('api.php?action=generateTicket', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                compraId: compraId,
+                userId: parseInt(userId)
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.ticket_url) {
+            window.open(result.ticket_url, '_blank');
+        } else if (result.html) {
+            // Mostrar HTML en nueva ventana
+            const ticketWindow = window.open('', '_blank');
+            ticketWindow.document.write(result.html);
+            ticketWindow.document.close();
+        } else {
+            alert('Ticket generado correctamente. ID de compra: ' + compraId);
+        }
+    } catch (error) {
+        console.error('Error generando ticket:', error);
+        alert('Se completó la compra, pero hubo un error al generar el ticket.');
+    }
+}
         
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Carrito page loaded');
@@ -262,5 +733,48 @@
         window.clearCartSimple = clearCartSimple;
         window.checkoutSimple = checkoutSimple;
     </script>
+    <style>
+    /* Estilos para el flujo de pago */
+    .card-option:hover {
+        border-color: #8b0000 !important;
+        background: #f9f9f9 !important;
+    }
+    
+    #paymentSuccessModal h3 {
+        color: #2e7d32 !important;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        #cardSelectionModal > div {
+            width: 95% !important;
+            padding: 20px !important;
+        }
+        
+        .card-option {
+            padding: 12px !important;
+        }
+        
+        #paymentSuccessModal > div {
+            width: 95% !important;
+            padding: 20px !important;
+        }
+        
+        #viewTicketBtn, #goToPurchasesBtn {
+            padding: 10px 15px !important;
+            font-size: 14px !important;
+        }
+    }
+    
+    /* Mejoras para la interfaz del carrito */
+    #cartContent button {
+        transition: all 0.3s ease;
+    }
+    
+    #cartContent button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(139, 0, 0, 0.2);
+    }
+</style>
 </body>
 </html>

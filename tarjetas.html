@@ -467,58 +467,80 @@
             });
             
             // Enviar formulario de nueva tarjeta
-            newCardForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const userId = localStorage.getItem('userId');
-                const cardName = document.getElementById('cardName').value.trim();
-                const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
-                const cardMonth = document.getElementById('cardMonth').value;
-                const cardYear = document.getElementById('cardYear').value;
-                const cardCVV = document.getElementById('cardCVV').value.trim();
-                
-                // Validaciones
-                if (!validateCardData(cardName, cardNumber, cardMonth, cardYear, cardCVV)) {
-                    return;
-                }
-                
-                try {
-                    const response = await fetch('api.php?action=addUserCard', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            userId: parseInt(userId),
-                            nombre_titular: cardName,
-                            numero_tarjeta: cardNumber,
-                            mes_exp: cardMonth,
-                            anio_exp: cardYear,
-                            cvv: cardCVV
-                        })
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        showNotification('✅ Tarjeta agregada correctamente');
-                        
-                        // Ocultar formulario y mostrar botón
-                        addCardForm.style.display = 'none';
-                        addCardBtn.style.display = 'inline-block';
-                        newCardForm.reset();
-                        
-                        // Recargar la lista de tarjetas
-                        setTimeout(() => {
-                            loadUserCards();
-                        }, 500);
-                        
-                    } else {
-                        alert('Error: ' + result.message);
-                    }
-                } catch (error) {
-                    console.error('Error agregando tarjeta:', error);
-                    alert('Error de conexión al servidor');
-                }
-            });
+           // En la parte del submit del formulario (dentro de setupEventListeners):
+newCardForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const userId = localStorage.getItem('userId');
+    const cardName = document.getElementById('cardName').value.trim();
+    const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+    const cardMonth = document.getElementById('cardMonth').value;
+    const cardYear = document.getElementById('cardYear').value;
+    const cardCVV = document.getElementById('cardCVV').value.trim();
+    
+    // Validaciones básicas
+    if (!cardName || !cardNumber || !cardMonth || !cardYear || !cardCVV) {
+        alert('Todos los campos son obligatorios');
+        return;
+    }
+    
+    // Validaciones avanzadas
+    if (!validateCardData(cardName, cardNumber, cardMonth, cardYear, cardCVV)) {
+        return;
+    }
+    
+    // Mostrar mensaje de procesamiento
+    const submitBtn = document.querySelector('.save-card-btn');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Procesando...';
+    submitBtn.disabled = true;
+    
+    try {
+        const response = await fetch('api.php?action=addUserCard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: parseInt(userId),
+                nombre_titular: cardName,
+                numero_tarjeta: cardNumber,
+                mes_exp: cardMonth,
+                anio_exp: cardYear,
+                cvv: cardCVV
+            })
+        });
+        
+        const result = await response.json();
+        
+        // Restaurar botón
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        
+        if (result.success) {
+            showNotification('✅ Tarjeta agregada correctamente');
+            
+            // Ocultar formulario y mostrar botón
+            addCardForm.style.display = 'none';
+            addCardBtn.style.display = 'inline-block';
+            newCardForm.reset();
+            
+            // Recargar la lista de tarjetas
+            setTimeout(() => {
+                loadUserCards();
+            }, 500);
+            
+        } else {
+            // Mostrar error específico
+            showNotification('❌ ' + result.message, 'error');
+        }
+    } catch (error) {
+        // Restaurar botón
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        
+        console.error('Error agregando tarjeta:', error);
+        showNotification('❌ Error de conexión. Intenta nuevamente.', 'error');
+    }
+});
             
             // Delegar eventos para botones dinámicos
             document.addEventListener('click', async function(e) {
@@ -542,38 +564,155 @@
         }
 
         // 10) Validar datos de tarjeta
-        function validateCardData(name, number, month, year, cvv) {
-            // Validar nombre
-            if (name.length < 3) {
-                alert('El nombre del titular debe tener al menos 3 caracteres');
-                return false;
+        // 10) Validar datos de tarjeta (VERSIÓN MEJORADA PERO SIMPLE)
+function validateCardData(name, number, month, year, cvv) {
+    // Validar nombre
+    if (name.length < 3) {
+        alert('El nombre del titular debe tener al menos 3 caracteres');
+        return false;
+    }
+    
+    // Validar número de tarjeta (debe tener entre 13 y 19 dígitos)
+    const cleanNumber = number.replace(/\D/g, '');
+    if (cleanNumber.length < 13 || cleanNumber.length > 19) {
+        alert('El número de tarjeta debe tener entre 13 y 19 dígitos');
+        return false;
+    }
+    
+    // Validar algoritmo de Luhn (solo si quieres esta validación extra)
+    if (!validateLuhn(cleanNumber)) {
+        alert('El número de tarjeta no es válido. Por favor verifícalo.');
+        return false;
+    }
+    
+    // Validar fecha de expiración
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1; // Enero es 0
+    
+    if (parseInt(year) < currentYear || 
+        (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
+        alert('La tarjeta está expirada');
+        return false;
+    }
+    
+    // Validar CVV
+    if (!/^\d{3,4}$/.test(cvv)) {
+        alert('El CVV debe tener 3 o 4 dígitos numéricos');
+        return false;
+    }
+    
+    return true;
+}
+
+// 10.1) Algoritmo de Luhn para validar tarjetas (OPCIONAL)
+function validateLuhn(cardNumber) {
+    // Solo validar si el número tiene al menos 13 dígitos
+    if (cardNumber.length < 13) return true;
+    
+    let sum = 0;
+    let isEven = false;
+    
+    // Recorrer números de derecha a izquierda
+    for (let i = cardNumber.length - 1; i >= 0; i--) {
+        let digit = parseInt(cardNumber.charAt(i), 10);
+        
+        if (isEven) {
+            digit *= 2;
+            if (digit > 9) {
+                digit -= 9;
             }
-            
-            // Validar número de tarjeta (debe tener entre 13 y 19 dígitos)
-            const cleanNumber = number.replace(/\D/g, '');
-            if (cleanNumber.length < 13 || cleanNumber.length > 19) {
-                alert('El número de tarjeta debe tener entre 13 y 19 dígitos');
-                return false;
-            }
-            
-            // Validar fecha de expiración
-            const currentYear = new Date().getFullYear();
-            const currentMonth = new Date().getMonth() + 1; // Enero es 0
-            
-            if (parseInt(year) < currentYear || 
-                (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
-                alert('La tarjeta está expirada');
-                return false;
-            }
-            
-            // Validar CVV
-            if (cvv.length < 3 || cvv.length > 4) {
-                alert('El CVV debe tener 3 o 4 dígitos');
-                return false;
-            }
-            
-            return true;
         }
+        
+        sum += digit;
+        isEven = !isEven;
+    }
+    
+    return (sum % 10) === 0;
+}
+
+// 11) Mejorar función eliminar tarjeta
+async function deleteCard(cardId) {
+    const userId = localStorage.getItem('userId');
+    
+    // Verificar si la tarjeta está siendo usada en compras
+    try {
+        const checkResponse = await fetch(`api.php?action=checkCardUsage&userId=${userId}&cardId=${cardId}`);
+        const checkResult = await checkResponse.json();
+        
+        if (checkResult.usedInPurchases) {
+            if (!confirm(`Esta tarjeta tiene ${checkResult.purchaseCount} compra(s) asociada(s).\n¿Estás seguro de que quieres eliminarla?\nLas compras existentes mantendrán el registro histórico.`)) {
+                return;
+            }
+        }
+        
+    } catch (error) {
+        // Si no existe la acción, continuar normalmente
+        console.log('Verificación de uso no disponible');
+    }
+    
+    if (!confirm(`¿Estás seguro de que quieres eliminar esta tarjeta?\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('api.php?action=deleteUserCard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: parseInt(userId),
+                cardId: parseInt(cardId)
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('🗑️ Tarjeta eliminada correctamente');
+            
+            // Recargar la lista de tarjetas
+            setTimeout(() => {
+                loadUserCards();
+            }, 500);
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error eliminando tarjeta:', error);
+        alert('Error de conexión al servidor');
+    }
+}
+
+// 12) Mostrar notificaciones (VERSIÓN MEJORADA)
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)' : 
+                     type === 'error' ? 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' :
+                     'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+        max-width: 400px;
+        word-wrap: break-word;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
 
         // 11) Eliminar tarjeta
         async function deleteCard(cardId) {

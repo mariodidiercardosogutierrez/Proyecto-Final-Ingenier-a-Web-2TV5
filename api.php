@@ -1256,6 +1256,8 @@ function getUserCards($conn) {
 }
 
 // FUNCIÓN PARA AGREGAR TARJETA DE USUARIO
+// FUNCIÓN PARA AGREGAR TARJETA DE USUARIO
+// FUNCIÓN PARA AGREGAR TARJETA DE USUARIO
 function addUserCard($conn) {
     $data = json_decode(file_get_contents("php://input"), true);
     
@@ -1279,57 +1281,102 @@ function addUserCard($conn) {
     $anio_exp = $conn->real_escape_string($data['anio_exp']);
     $cvv = $conn->real_escape_string($data['cvv']);
     
-    // Verificar si la tarjeta ya existe en la base de datos general
-    $checkCardSql = "SELECT id_tarjeta FROM Tarjeta 
-                     WHERE numero_tarjeta = '$numero_tarjeta' 
-                     AND mes_exp = '$mes_exp' 
-                     AND anio_exp = '$anio_exp' 
-                     AND cvv = '$cvv' 
-                     LIMIT 1";
+    // VALIDACIÓN: Verificar que el usuario existe
+    $checkUserSql = "SELECT id FROM usuarios WHERE id = $userId LIMIT 1";
+    $userResult = $conn->query($checkUserSql);
     
-    $checkResult = $conn->query($checkCardSql);
-    
-    if ($checkResult && $checkResult->num_rows > 0) {
-        // La tarjeta ya existe, obtener su ID
-        $cardRow = $checkResult->fetch_assoc();
-        $cardId = $cardRow['id_tarjeta'];
-    } else {
-        // La tarjeta no existe, insertarla en Tarjeta
-        $insertCardSql = "INSERT INTO Tarjeta (nombre_titular, numero_tarjeta, mes_exp, anio_exp, cvv) 
-                          VALUES ('$nombre_titular', '$numero_tarjeta', '$mes_exp', '$anio_exp', '$cvv')";
-        
-        if (!$conn->query($insertCardSql)) {
-            echo json_encode(["success" => false, "message" => "Error al crear tarjeta: " . $conn->error]);
-            return;
-        }
-        
-        $cardId = $conn->insert_id;
-    }
-    
-    // Verificar si el usuario ya tiene asociada esta tarjeta
-    $checkUserCardSql = "SELECT id_usuario_tarjeta FROM Usuario_Tarjeta 
-                         WHERE id_usuario = $userId AND id_tarjeta = $cardId 
-                         LIMIT 1";
-    
-    $checkUserResult = $conn->query($checkUserCardSql);
-    
-    if ($checkUserResult && $checkUserResult->num_rows > 0) {
-        echo json_encode(["success" => false, "message" => "Esta tarjeta ya está asociada a tu cuenta"]);
+    if (!$userResult || $userResult->num_rows === 0) {
+        echo json_encode(["success" => false, "message" => "Usuario no válido. Por favor inicia sesión nuevamente."]);
         return;
     }
     
-    // Asociar tarjeta al usuario
-    $insertUserCardSql = "INSERT INTO Usuario_Tarjeta (id_usuario, id_tarjeta) 
-                          VALUES ($userId, $cardId)";
+    // VALIDACIÓN: Verificar longitud del número de tarjeta (13-19 dígitos)
+    $cleanNumber = preg_replace('/\D/', '', $numero_tarjeta);
+    if (strlen($cleanNumber) < 13 || strlen($cleanNumber) > 19) {
+        echo json_encode(["success" => false, "message" => "Número de tarjeta inválido (debe tener 13-19 dígitos)"]);
+        return;
+    }
     
-    if ($conn->query($insertUserCardSql)) {
+    // VALIDACIÓN: Verificar fecha de expiración
+    $currentYear = date('Y');
+    $currentMonth = date('m');
+    if ($anio_exp < $currentYear || ($anio_exp == $currentYear && $mes_exp < $currentMonth)) {
+        echo json_encode(["success" => false, "message" => "La tarjeta está expirada"]);
+        return;
+    }
+    
+    // VALIDACIÓN: Verificar CVV (3-4 dígitos)
+    if (!preg_match('/^\d{3,4}$/', $cvv)) {
+        echo json_encode(["success" => false, "message" => "CVV inválido (debe tener 3 o 4 dígitos)"]);
+        return;
+    }
+    
+    // Usar transacción para asegurar consistencia
+    $conn->begin_transaction();
+    
+    try {
+        // Verificar si la tarjeta ya existe en la base de datos general
+        $checkCardSql = "SELECT id_tarjeta FROM Tarjeta 
+                         WHERE numero_tarjeta = '$numero_tarjeta' 
+                         AND mes_exp = '$mes_exp' 
+                         AND anio_exp = '$anio_exp' 
+                         AND cvv = '$cvv' 
+                         LIMIT 1";
+        
+        $checkResult = $conn->query($checkCardSql);
+        
+        if ($checkResult && $checkResult->num_rows > 0) {
+            // La tarjeta ya existe, obtener su ID
+            $cardRow = $checkResult->fetch_assoc();
+            $cardId = $cardRow['id_tarjeta'];
+        } else {
+            // La tarjeta no existe, insertarla en Tarjeta
+            $insertCardSql = "INSERT INTO Tarjeta (nombre_titular, numero_tarjeta, mes_exp, anio_exp, cvv) 
+                              VALUES ('$nombre_titular', '$numero_tarjeta', '$mes_exp', '$anio_exp', '$cvv')";
+            
+            if (!$conn->query($insertCardSql)) {
+                // ERROR ESPECÍFICO: Puede ser por duplicados o restricciones
+                if ($conn->errno == 1062) { // Código de error para duplicados
+                    throw new Exception("Esta tarjeta ya existe en el sistema");
+                }
+                throw new Exception("Error al crear tarjeta: " . $conn->error);
+            }
+            
+            $cardId = $conn->insert_id;
+        }
+        
+        // Verificar si el usuario ya tiene asociada esta tarjeta
+        $checkUserCardSql = "SELECT id_usuario_tarjeta FROM Usuario_Tarjeta 
+                             WHERE id_usuario = $userId AND id_tarjeta = $cardId 
+                             LIMIT 1";
+        
+        $checkUserResult = $conn->query($checkUserCardSql);
+        
+        if ($checkUserResult && $checkUserResult->num_rows > 0) {
+            throw new Exception("Esta tarjeta ya está asociada a tu cuenta");
+        }
+        
+        // Asociar tarjeta al usuario
+        $insertUserCardSql = "INSERT INTO Usuario_Tarjeta (id_usuario, id_tarjeta) 
+                              VALUES ($userId, $cardId)";
+        
+        if (!$conn->query($insertUserCardSql)) {
+            throw new Exception("Error al asociar tarjeta: " . $conn->error);
+        }
+        
+        // Confirmar transacción
+        $conn->commit();
+        
         echo json_encode([
             "success" => true,
             "message" => "Tarjeta agregada correctamente",
             "cardId" => $cardId
         ]);
-    } else {
-        echo json_encode(["success" => false, "message" => "Error al asociar tarjeta: " . $conn->error]);
+        
+    } catch (Exception $e) {
+        // Revertir transacción en caso de error
+        $conn->rollback();
+        echo json_encode(["success" => false, "message" => $e->getMessage()]);
     }
 }
 
@@ -1530,6 +1577,9 @@ function cancelPurchase($conn) {
 // ========================
 //  FUNCIÓN PARA PROCESAR PAGO
 // ========================
+// ========================
+//  PROCESAR PAGO
+// ========================
 function processPayment($conn) {
     $data = json_decode(file_get_contents("php://input"), true);
     
@@ -1592,6 +1642,7 @@ function processPayment($conn) {
         $statusResult = $conn->query($statusSql);
         
         if (!$statusResult || $statusResult->num_rows === 0) {
+            // Crear estatus si no existe
             $conn->query("INSERT INTO Estatus_Compra (estatus) VALUES ('Completado')");
             $statusId = $conn->insert_id;
         } else {
@@ -1618,30 +1669,24 @@ function processPayment($conn) {
             if (!$conn->query($compraItemSql)) {
                 throw new Exception("Error al crear item de compra: " . $conn->error);
             }
-            
-            // 7. Agregar a biblioteca del usuario (opcional, si tienes tabla Biblioteca)
-            // Aquí podrías insertar en una tabla de Biblioteca si la tienes
         }
         
-        // 8. Vaciar carrito
+        // 7. Vaciar carrito
         $clearCartSql = "DELETE FROM CarritoItem WHERE id_carrito = $cartId";
         if (!$conn->query($clearCartSql)) {
             throw new Exception("Error al vaciar carrito: " . $conn->error);
         }
         
-        // 9. Generar ticket PDF
-        $ticketData = generateTicketData($conn, $compraId, $userId, $total, $items);
-        $pdfPath = generatePDF($ticketData);
-        
-        // 10. Confirmar transacción
+        // 8. Confirmar transacción
         $conn->commit();
         
+        // 9. Devolver respuesta exitosa
         echo json_encode([
             "success" => true,
             "message" => "Pago procesado exitosamente",
             "compraId" => $compraId,
             "total" => $total,
-            "ticket_url" => $pdfPath
+            "ticket_url" => null // Puedes agregar URL del ticket si lo generas
         ]);
         
     } catch (Exception $e) {
@@ -1650,7 +1695,6 @@ function processPayment($conn) {
         echo json_encode(["success" => false, "message" => $e->getMessage()]);
     }
 }
-
 // ========================
 //  GENERAR DATOS DEL TICKET
 // ========================
