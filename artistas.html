@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundSpace - Artistas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- BOTÓN QUE MUESTRA LA SIDEBAR -->
+    <button id="showSidebarBtn" class="show-sidebar-btn">➕</button>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <button class="sidebar-hide-btn">🗕</button>
+        </div>
+
+        <nav class="menu">
+            <p class="section-title">Navegación</p>
+            <a href="index.html">Inicio</a>
+            <a href="albumes.html">Géneros</a>
+            <a href="artistas.html" class="active">Artistas</a>
+            <a href="compras.html">Mis Compras</a>
+            <a href="tarjetas.html">Tarjetas</a>
+
+            <p class="section-title">Del usuario</p>
+            <a href="biblioteca.html">Biblioteca</a>
+            <a href="favoritos.html">Favoritos</a>
+        </nav>
+    </aside>
+
+    <!-- CONTENIDO -->
+    <div class="content">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-logo">
+                <img src="images/logo.png" alt="SoundSpace">
+            </div>
+
+            <div class="icons">
+                <a href="carrito.html" class="icon-btn">🛒</a>
+
+                <div class="user-dropdown">
+                    <button class="user-btn icon-btn">👤</button>
+
+                    <div class="dropdown-menu">
+                        <div class="user-info">
+                            <strong id="userNameDisplay"></strong><br>
+                            <small id="userEmailDisplay"></small>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+                        <button id="logoutBtnDropdown" class="dropdown-item logout-btn">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- SECCIÓN PRINCIPAL -->
+        <main>
+            <section class="catalog-section">
+                <div class="catalog-container">
+                    <div class="catalog-header">
+                        <h2>Artistas SoundSpace</h2>
+                        <p>Explora los artistas y sus álbumes disponibles.</p><br><br>
+                        
+                        <!-- FILTROS POR ARTISTA -->
+                        <div class="artist-filters">
+                            <button class="artist-btn active" data-artist-id="all">Todos</button>
+                            <!-- Los artistas se cargarán dinámicamente aquí -->
+                        </div>
+                    </div>
+
+                    <!-- CONTENEDOR DINÁMICO -->
+                    <table class="catalog" id="albumTable">
+                        <tbody id="albumBody">
+                            <tr>
+                                <td colspan="3" style="text-align:center; padding:40px;">
+                                    Cargando artistas y álbumes...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2025 Soundspace - Todos los derechos reservados</p>
+        </footer>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+    // VERIFICACIÓN DE LOGIN
+    document.addEventListener("DOMContentLoaded", function () {
+        const userId = localStorage.getItem('userId');
+        const userEmail = localStorage.getItem('userEmail');
+        
+        if (!userId || !userEmail) {
+            const currentPage = window.location.pathname.split('/').pop();
+            if (currentPage !== 'login.html' && 
+                currentPage !== 'register.html' && 
+                currentPage !== 'cperdida.html') {
+                alert('Por favor, inicie sesión para continuar');
+                window.location.href = 'login.html';
+                return;
+            }
+        }
+        
+        // Mostrar información del usuario
+        const userNameDisplay = document.getElementById('userNameDisplay');
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+        
+        if (userNameDisplay && userEmailDisplay) {
+            userNameDisplay.textContent = localStorage.getItem('userName') || 'Usuario';
+            userEmailDisplay.textContent = localStorage.getItem('userEmail') || 'No logueado';
+        }
+        
+        // Inicializar página
+        initArtistasPage();
+    });
+    
+    // Variables globales PARA ARTISTAS.HTML
+    let allAlbums = [];
+    let allArtists = [];
+    let currentArtistId = "all";
+    
+    // ==================== INICIALIZACIÓN DE ARTISTAS.HTML ====================
+    
+    function initArtistasPage() {
+        console.log('Inicializando página artistas.html');
+        
+        // Configurar logout
+        const logoutBtn = document.getElementById('logoutBtnDropdown');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function() {
+                localStorage.removeItem("userEmail");
+                localStorage.removeItem("userName");
+                localStorage.removeItem("userId");
+                localStorage.removeItem("userRole");
+                alert("Sesión cerrada correctamente");
+                window.location.href = "index.html";
+            });
+        }
+        
+        // Cargar álbumes
+        loadAlbums();
+        
+        // Guardar estado cuando se cierre la página
+        window.addEventListener('beforeunload', saveArtistState);
+    }
+    
+    // ==================== FUNCIONES DE ESTADO ====================
+    
+    function saveArtistState() {
+        const state = {
+            artistId: currentArtistId,
+            scrollPosition: window.scrollY
+        };
+        console.log('Guardando estado de artistas:', state);
+        sessionStorage.setItem('artistasPageState', JSON.stringify(state));
+    }
+    
+    function loadArtistState() {
+        const savedState = sessionStorage.getItem('artistasPageState');
+        if (savedState) {
+            console.log('Estado de artistas cargado:', JSON.parse(savedState));
+            return JSON.parse(savedState);
+        }
+        return null;
+    }
+    
+    // ==================== FUNCIONES DE ARTISTAS ====================
+    
+    function getAlbumImages(idAlbum) {
+        const startImage = (idAlbum - 1) * 4 + 1;
+        return {
+            mainImage: `images/${startImage}.png`,
+            thumbnails: [
+                `images/${startImage}.png`,
+                `images/${startImage + 1}.png`,
+                `images/${startImage + 2}.png`,
+                `images/${startImage + 3}.png`
+            ]
+        };
+    }
+    
+    // FUNCIÓN ÚNICA PARA ABRIR DETALLES DESDE ARTISTAS.HTML
+   // FUNCIÓN ÚNICA PARA ABRIR DETALLES DESDE ARTISTAS.HTML
+function openAlbumDetails(albumData) {
+    console.log('Abriendo detalles desde artistas.html');
+    
+    // 1. Guardar la página actual dinámicamente (IMPORTANTE)
+    const currentPage = window.location.pathname.split('/').pop();
+    sessionStorage.setItem('lastAlbumPage', currentPage);
+    
+    // 2. Guardar el estado actual del filtro
+    saveArtistState();
+    
+    // 3. Guardar datos del álbum
+    localStorage.setItem('selectedAlbum', JSON.stringify({
+        id: albumData.id_album,
+        titulo: albumData.titulo,
+        artista: albumData.nombre_artista,
+        anio: albumData.anio,
+        descripcion: albumData.descripcion_album,
+        genero: albumData.genero_album,
+        temas: albumData.cantidadtemas,
+        duracion: albumData.duracion_total,
+        precio: albumData.precio || 600,
+        images: getAlbumImages(albumData.id_album)
+    }));
+    
+    // 4. Navegar a canciones.html
+    window.location.href = 'canciones.html';
+} 
+    // ==================== FUNCIONES DE CARGA ====================
+    
+    function loadArtists() {
+        fetch("api.php?action=getArtistas")
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    extractArtistsFromAlbums();
+                    return;
+                }
+                allArtists = data.artists || [];
+                populateArtistFilters();
+            })
+            .catch(error => {
+                console.error("Error cargando artistas:", error);
+                extractArtistsFromAlbums();
+            });
+    }
+    
+    function extractArtistsFromAlbums() {
+        const artistMap = new Map();
+        allAlbums.forEach(album => {
+            if (album.id_artista && album.nombre_artista) {
+                if (!artistMap.has(album.id_artista)) {
+                    artistMap.set(album.id_artista, {
+                        id_artista: album.id_artista,
+                        nombre_artista: album.nombre_artista,
+                        nombre: album.nombre_artista
+                    });
+                }
+            }
+        });
+        allArtists = Array.from(artistMap.values());
+        populateArtistFilters();
+    }
+    
+    function populateArtistFilters() {
+        const artistContainer = document.querySelector('.artist-filters');
+        if (!artistContainer) return;
+        
+        artistContainer.innerHTML = '';
+        
+        // Botón "Todos"
+        const allBtn = document.createElement('button');
+        allBtn.className = 'artist-btn active';
+        allBtn.textContent = 'Todos';
+        allBtn.setAttribute('data-artist-id', 'all');
+        allBtn.addEventListener('click', () => filterAlbumsByArtist('all'));
+        artistContainer.appendChild(allBtn);
+        
+        // Botones para cada artista
+        allArtists.forEach(artist => {
+            const button = document.createElement('button');
+            button.className = 'artist-btn';
+            button.textContent = artist.nombre_artista || artist.nombre;
+            button.setAttribute('data-artist-id', artist.id_artista);
+            button.addEventListener('click', () => filterAlbumsByArtist(artist.id_artista));
+            artistContainer.appendChild(button);
+        });
+        
+        // Restaurar estado si existe
+        restoreArtistState();
+    }
+    
+    function filterAlbumsByArtist(artistId) {
+        console.log('Filtrando por artista:', artistId);
+        currentArtistId = artistId;
+        
+        // Actualizar botones activos
+        document.querySelectorAll('.artist-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-artist-id') === artistId.toString()) {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Filtrar álbumes
+        let filteredAlbums;
+        if (artistId === "all") {
+            filteredAlbums = allAlbums;
+        } else {
+            filteredAlbums = allAlbums.filter(album => album.id_artista == artistId);
+        }
+        
+        displayAlbums(filteredAlbums);
+    }
+    
+    function displayAlbums(albums) {
+        const tbody = document.getElementById('albumBody');
+        if (!tbody) return;
+        
+        if (albums.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:center; padding:40px; color:#666;">
+                        No hay álbumes disponibles
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        const albumsPerRow = 3;
+        let currentRow;
+        
+        // Agrupar por artista solo si estamos viendo "Todos"
+        if (currentArtistId === "all") {
+            const albumsByArtist = {};
+            albums.forEach(album => {
+                const artistId = album.id_artista;
+                if (!albumsByArtist[artistId]) {
+                    albumsByArtist[artistId] = {
+                        artistName: album.nombre_artista,
+                        albums: []
+                    };
+                }
+                albumsByArtist[artistId].albums.push(album);
+            });
+            
+            // Mostrar cada artista con sus álbumes
+            Object.values(albumsByArtist).forEach(artistData => {
+                // Encabezado del artista
+                const artistHeaderRow = document.createElement('tr');
+                artistHeaderRow.innerHTML = `
+                    <td colspan="3" style="padding:30px 0 10px 0; border-bottom: 2px solid #8b0000;">
+                        <h3 style="margin:0; font-size:24px; color:#333;">${artistData.artistName}</h3>
+                        <p style="margin:5px 0 0 0; color:#8b0000; font-size:14px;">
+                            ${artistData.albums.length} álbum${artistData.albums.length !== 1 ? 'es' : ''}
+                        </p>
+                    </td>
+                `;
+                tbody.appendChild(artistHeaderRow);
+                
+                // Álbumes del artista
+                let currentRow;
+                artistData.albums.forEach((album, index) => {
+                    if (index % albumsPerRow === 0) {
+                        currentRow = document.createElement('tr');
+                        tbody.appendChild(currentRow);
+                    }
+                    createAlbumCell(album, currentRow, false);
+                });
+                
+                // Separador entre artistas
+                const separatorRow = document.createElement('tr');
+                separatorRow.innerHTML = `<td colspan="3" style="padding:20px 0;"></td>`;
+                tbody.appendChild(separatorRow);
+            });
+        } else {
+            // Mostrar solo los álbumes del artista seleccionado
+            albums.forEach((album, index) => {
+                if (index % albumsPerRow === 0) {
+                    currentRow = document.createElement('tr');
+                    tbody.appendChild(currentRow);
+                }
+                createAlbumCell(album, currentRow, true);
+            });
+        }
+        
+        // Agregar event listeners a los botones de compra
+        setTimeout(() => {
+            document.querySelectorAll('.buy-btn-artista').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const albumId = this.getAttribute('data-id');
+                    const albumElement = this.closest('.product-card');
+                    const albumName = albumElement.querySelector('.product-name').textContent;
+                    const priceElement = albumElement.querySelector('.meta-item.price');
+                    const priceText = priceElement ? priceElement.textContent : '$600.00 MXN';
+                    const priceMatch = priceText.match(/[\d,.]+/);
+                    let price = 600.00;
+                    if (priceMatch) {
+                        price = parseFloat(priceMatch[0].replace(',', ''));
+                    }
+                    
+                    // Usar la función del carrito
+                    if (window.addToCart) {
+                        window.addToCart(albumId, albumName, price, e);
+                    }
+                });
+            });
+        }, 100);
+    }
+    
+    function createAlbumCell(album, currentRow, showArtistName) {
+        const images = getAlbumImages(album.id_album);
+        const precio = album.precio && parseFloat(album.precio) > 0 
+            ? `$${parseFloat(album.precio).toFixed(2)} MXN` 
+            : '$600.00 MXN';
+        
+        let thumbsHTML = "";
+        for (let i = 0; i < 4; i++) {
+            const imgNum = (album.id_album - 1) * 4 + i + 1;
+            thumbsHTML += `
+                <td>
+                    <img class="thumb" 
+                         src="images/${imgNum}.png" 
+                         alt="${album.titulo} - Imagen ${i + 1}"
+                         onerror="this.style.display='none'">
+                </td>
+            `;
+        }
+        
+        const artistNameHTML = showArtistName ? 
+            `<div class="product-artist">${album.nombre_artista}</div>` : '';
+        
+        const cell = document.createElement('td');
+        cell.innerHTML = `
+            <div class="product-card album-clickable-artista" data-album-id="${album.id_album}">
+                <div class="product-header">
+                    <figure class="product-image">
+                        <img src="${images.mainImage}" 
+                             alt="${album.titulo}"
+                             onerror="this.src='images/placeholder.png'">
+                    </figure>
+                    <div class="product-title-info">
+                        <h3 class="product-name">${album.titulo}</h3>
+                        ${artistNameHTML}
+                    </div>
+                </div>
+                <p class="product-description">${album.descripcion_album}</p>
+                <div class="product-meta-row">
+                    <span class="meta-item year">${album.anio}</span>
+                    <span class="meta-item tracks">${album.cantidadtemas} temas</span>
+                    <span class="meta-item price">${precio}</span>
+                </div>
+                <div class="product-thumbs-row">
+                    <table class="thumbs"><tr>${thumbsHTML}</tr></table>
+                </div>
+                <div class="product-action-row">
+                    <button class="buy-btn-artista" data-id="${album.id_album}">Agregar al carrito</button>
+                </div>
+            </div>
+        `;
+        
+        // Hacer la tarjeta clickeable
+        const productCard = cell.querySelector('.album-clickable-artista');
+        productCard.addEventListener('click', function(e) {
+            if (e.target.classList.contains('buy-btn-artista') || e.target.classList.contains('thumb')) {
+                return;
+            }
+            openAlbumDetails(album);
+        });
+        
+        // Efectos hover
+        productCard.style.cursor = 'pointer';
+        productCard.style.transition = 'transform 0.2s';
+        productCard.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+        });
+        productCard.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+        });
+        
+        currentRow.appendChild(cell);
+    }
+    
+    function loadAlbums() {
+        fetch("api.php?action=getAlbums")
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    showErrorMessage("Error al cargar los álbumes");
+                    return;
+                }
+                allAlbums = data.albums || [];
+                console.log("Álbumes cargados:", allAlbums.length);
+                loadArtists();
+                displayAlbums(allAlbums);
+            })
+            .catch(error => {
+                console.error("Error cargando álbumes:", error);
+                showErrorMessage("Error de conexión. Intente más tarde.");
+            });
+    }
+    
+    function restoreArtistState() {
+        const savedState = loadArtistState();
+        if (!savedState) return;
+        
+        console.log('Restaurando estado:', savedState);
+        
+        // Aplicar después de un pequeño delay para asegurar que los botones estén cargados
+        setTimeout(() => {
+            if (savedState.artistId && savedState.artistId !== "all") {
+                const artistBtn = document.querySelector(`.artist-btn[data-artist-id="${savedState.artistId}"]`);
+                if (artistBtn) {
+                    artistBtn.click(); // Esto activará filterAlbumsByArtist
+                }
+            }
+            
+            // Restaurar scroll
+            if (savedState.scrollPosition) {
+                setTimeout(() => {
+                    window.scrollTo(0, savedState.scrollPosition);
+                }, 500);
+            }
+        }, 1000);
+    }
+    
+    function showErrorMessage(message) {
+        const tbody = document.getElementById('albumBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:center; padding:40px; color:#8b0000;">
+                        ${message}
+                    </td>
+                </tr>
+            `;
+        }
+    }
+</script>
+
+    <!-- Script principal para la sidebar y otros componentes -->
+    <script src="main.js"></script>
+    
+    <!-- Estilos específicos para artistas.html -->
+    <style>
+        .artist-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .artist-btn {
+            padding: 10px 20px;
+            background: #f5f5f5;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .artist-btn:hover {
+            background: #e9e9e9;
+            border-color: #999;
+        }
+        
+        .artist-btn.active {
+            background: #8b0000;
+            color: white;
+            border-color: #8b0000;
+            font-weight: 600;
+        }
+        
+        .product-artist {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .album-clickable {
+            position: relative;
+        }
+        
+        .album-clickable::after {
+            content: "🔍 Ver detalles";
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #8b0000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .album-clickable:hover::after {
+            opacity: 1;
+        }
+        
+        .cart-count {
+            background: #8b0000;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+    </style>
+</body>
+</html>

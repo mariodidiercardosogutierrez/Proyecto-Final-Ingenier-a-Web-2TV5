@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Compras - SoundSpace Admin</title>
+    <style>
+        /* Estilos generales */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: #1a1a1a;
+            color: white;
+            padding: 25px 20px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            border-right: 3px solid #8b0000;
+        }
+
+        .sidebar-title {
+            color: #8b0000;
+            font-size: 24px;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #333;
+            text-align: center;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .menu a {
+            color: #ddd;
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu a:hover {
+            background: #333;
+            transform: translateX(5px);
+        }
+
+        .menu a.active {
+            background: #8b0000;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Contenido principal */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        .main-content h1 {
+            color: #8b0000;
+            margin-bottom: 20px;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Controles */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .search-box button {
+            background: #8b0000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-box button:hover {
+            background: #a00000;
+        }
+
+        .btn {
+            background: #8b0000;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            background: #a00000;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 0, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #444;
+        }
+
+        /* Filtros */
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-width: 150px;
+        }
+
+        /* Estadísticas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            font-size: 36px;
+            color: #8b0000;
+            width: 70px;
+            height: 70px;
+            background: #fff5f5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-info {
+            flex: 1;
+        }
+
+        .stat-info h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-info .amount {
+            color: #333;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-info .change {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .change.positive {
+            color: #2e7d32;
+        }
+
+        .change.negative {
+            color: #d32f2f;
+        }
+
+        /* Tabla */
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #8b0000;
+            color: white;
+        }
+
+        th {
+            padding: 18px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 15px;
+            border-bottom: 2px solid #a00000;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #eee;
+            transition: background 0.3s;
+        }
+
+        tbody tr:hover {
+            background: #f8f8f8;
+        }
+
+        td {
+            padding: 16px 15px;
+            color: #333;
+        }
+
+        /* Badges para estados */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .badge-completed {
+            background: #2e7d32;
+            color: white;
+        }
+
+        .badge-pending {
+            background: #ff9800;
+            color: white;
+        }
+
+        .badge-cancelled {
+            background: #d32f2f;
+            color: white;
+        }
+
+        .badge-refunded {
+            background: #1976d2;
+            color: white;
+        }
+
+        /* Botones de acción */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .view-btn, .edit-btn, .delete-btn, .invoice-btn, .refund-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .view-btn {
+            background: #1976d2;
+            color: white;
+        }
+
+        .view-btn:hover {
+            background: #1565c0;
+        }
+
+        .edit-btn {
+            background: #ff9800;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background: #f57c00;
+        }
+
+        .invoice-btn {
+            background: #388e3c;
+            color: white;
+        }
+
+        .invoice-btn:hover {
+            background: #2e7d32;
+        }
+
+        .refund-btn {
+            background: #7b1fa2;
+            color: white;
+        }
+
+        .refund-btn:hover {
+            background: #6a1b9a;
+        }
+
+        .delete-btn {
+            background: #d32f2f;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #c62828;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: #8b0000;
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        /* Detalles de compra */
+        .purchase-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .detail-section {
+            background: #f8f8f8;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .detail-section h3 {
+            color: #8b0000;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detail-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .products-table th {
+            background: #8b0000;
+            color: white;
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        .products-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .total-row {
+            background: #f8f8f8;
+            font-weight: bold;
+        }
+
+        /* Gráficos */
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .chart-card h3 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .chart-placeholder {
+            height: 300px;
+            background: #f8f8f8;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 16px;
+        }
+
+        /* Paginación */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 25px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .pagination button {
+            padding: 10px 18px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: #8b0000;
+            color: white;
+            border-color: #8b0000;
+        }
+
+        .pagination button.active {
+            background: #8b0000;
+            color: white;
+            border-color: #8b0000;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            margin: 0 15px;
+            color: #666;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #8b0000;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                margin-bottom: 20px;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                max-width: 100%;
+            }
+
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .filters {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .filter-group select,
+            .filter-group input {
+                width: 100%;
+            }
+
+            th, td {
+                padding: 12px 8px;
+                font-size: 14px;
+            }
+        }
+
+        /* Exportar */
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .export-btn {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .export-btn:hover {
+            background: #444;
+        }
+
+        /* Fecha range */
+        .date-range {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* Notificaciones */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1001;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.success {
+            background: #2e7d32;
+        }
+
+        .notification.error {
+            background: #d32f2f;
+        }
+
+        .notification.info {
+            background: #1976d2;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <h2 class="sidebar-title">SoundSpace Admin</h2>
+        <nav class="menu">
+            <a href="a_index.html">📊 Dashboard</a>
+            <a href="a_usuarios.html">👤 Usuarios</a>
+            <a href="a_roles.html">🔑 Roles</a>
+            <a href="a_catalogo.html">🎵 Catálogo</a>
+            <a href="a_compras.html" class="active">💰 Compras</a>
+            <a href="a_reportes.html">📈 Reportes</a>
+            <a href="#" id="logoutBtn">🚪 Cerrar Sesión</a>
+        </nav>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <h1>💰 Gestión de Compras</h1>
+        
+        <!-- Estadísticas -->
+        <div class="stats-grid" id="purchaseStats">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-info">
+                    <h3>Total Ventas</h3>
+                    <div class="amount" id="totalSales">$0.00</div>
+                    <div class="change positive" id="salesChange">+0% hoy</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-info">
+                    <h3>Total Compras</h3>
+                    <div class="amount" id="totalPurchases">0</div>
+                    <div class="change positive" id="purchasesChange">+0 hoy</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-info">
+                    <h3>Completadas</h3>
+                    <div class="amount" id="completedPurchases">0</div>
+                    <div class="change">Hoy: <span id="todayCompleted">0</span></div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-info">
+                    <h3>Ticket Promedio</h3>
+                    <div class="amount" id="averageTicket">$0.00</div>
+                    <div class="change">Por compra</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controles -->
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar por ID, usuario o email...">
+                <button onclick="searchPurchases()">
+                    🔍 Buscar
+                </button>
+            </div>
+            
+            <button class="btn" onclick="refreshData()">
+                🔄 Actualizar
+            </button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters">
+            <div class="filter-group">
+                <label for="statusFilter">Estado:</label>
+                <select id="statusFilter" onchange="filterPurchases()">
+                    <option value="">Todos los estados</option>
+                    <option value="Completado">Completado</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Cancelado">Cancelado</option>
+                    <option value="Reembolsado">Reembolsado</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="dateFilter">Fecha:</label>
+                <div class="date-range">
+                    <input type="date" id="startDate" onchange="filterPurchases()">
+                    <span>a</span>
+                    <input type="date" id="endDate" onchange="filterPurchases()">
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <label for="sortBy">Ordenar por:</label>
+                <select id="sortBy" onchange="filterPurchases()">
+                    <option value="fecha_desc">Más reciente</option>
+                    <option value="fecha_asc">Más antiguo</option>
+                    <option value="total_desc">Monto (alto a bajo)</option>
+                    <option value="total_asc">Monto (bajo a alto)</option>
+                </select>
+            </div>
+            
+            <div class="export-buttons">
+                <button class="export-btn" onclick="exportToCSV()">📥 CSV</button>
+                <button class="export-btn" onclick="exportToExcel()">📊 Excel</button>
+                <button class="export-btn" onclick="printReport()">🖨️ Imprimir</button>
+            </div>
+        </div>
+
+        <!-- Tabla de compras -->
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID Compra</th>
+                        <th>Cliente</th>
+                        <th>Fecha</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Método de Pago</th>
+                        <th>Productos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="purchasesTableBody">
+                    <tr>
+                        <td colspan="8" class="loading">
+                            <div class="spinner"></div>
+                            <p>Cargando compras...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div class="pagination" id="pagination">
+            <button onclick="changePage(-1)" disabled>◀ Anterior</button>
+            <span class="page-info">Página <span id="currentPage">1</span> de <span id="totalPages">1</span></span>
+            <button onclick="changePage(1)" disabled>Siguiente ▶</button>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>📈 Ventas por Día (Últimos 7 días)</h3>
+                <div class="chart-placeholder" id="salesChart">
+                    Gráfico de ventas
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <h3>🎵 Productos Más Vendidos</h3>
+                <div class="chart-placeholder" id="topProductsChart">
+                    Top productos
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal de detalles de compra -->
+    <div id="purchaseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalles de Compra</h2>
+                <button class="close-modal" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="purchase-details" id="purchaseDetails">
+                    <!-- Los detalles se cargan dinámicamente -->
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px 30px; background: #f8f8f8; border-radius: 0 0 15px 15px;">
+                <button class="btn-secondary" onclick="closeModal()">Cerrar</button>
+                <button class="btn" onclick="generateInvoice()">📄 Generar Factura</button>
+                <button class="btn" id="statusActionBtn" style="background: #ff9800;">Cambiar Estado</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 id="confirmTitle">Confirmar Acción</h2>
+                <button class="close-modal" onclick="closeConfirmModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">¿Estás seguro de que quieres realizar esta acción?</p>
+                <div id="confirmOptions" style="margin-top: 20px; display: none;">
+                    <label for="newStatus">Nuevo estado:</label>
+                    <select id="newStatus" style="width: 100%; padding: 10px; margin-top: 10px;">
+                        <option value="Completado">Completado</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Cancelado">Cancelado</option>
+                        <option value="Reembolsado">Reembolsado</option>
+                    </select>
+                    <textarea id="refundReason" placeholder="Motivo del reembolso (opcional)" 
+                              style="width: 100%; padding: 10px; margin-top: 10px; display: none;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeConfirmModal()">Cancelar</button>
+                <button class="btn" id="confirmActionBtn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let allPurchases = [];
+        let filteredPurchases = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let currentPurchaseId = null;
+        let confirmActionType = '';
+
+        // Verificar autenticación de admin
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAdminAuth();
+            loadPurchases();
+            setupEventListeners();
+            initializeDateFilters();
+        });
+
+        function checkAdminAuth() {
+            const userRole = localStorage.getItem('userRole');
+            if (userRole !== 'admin') {
+                alert('Acceso denegado. Solo administradores pueden acceder.');
+                window.location.href = 'index.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Inicializar filtros de fecha
+        function initializeDateFilters() {
+            const today = new Date();
+            const lastWeek = new Date();
+            lastWeek.setDate(today.getDate() - 7);
+            
+            document.getElementById('startDate').value = lastWeek.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+        }
+
+        // Cargar compras desde la API
+        async function loadPurchases() {
+            try {
+                showLoading(true);
+                
+                const response = await fetch('api.php?action=getAllPurchases');
+                const data = await response.json();
+                
+                if (data.success) {
+                    allPurchases = data.purchases;
+                    filteredPurchases = [...allPurchases];
+                    updatePurchaseStats();
+                    renderPurchasesTable();
+                    updateCharts();
+                } else {
+                    throw new Error(data.message || 'Error al cargar compras');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error al cargar compras: ' + error.message, 'error');
+                // Datos de ejemplo para desarrollo
+                loadSampleData();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Actualizar estadísticas
+        function updatePurchaseStats() {
+            const today = new Date().toISOString().split('T')[0];
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            // Total ventas
+            const totalSales = allPurchases.reduce((sum, purchase) => sum + parseFloat(purchase.total), 0);
+            
+            // Ventas de hoy y ayer
+            const todaySales = allPurchases
+                .filter(p => p.fecha && p.fecha.startsWith(today))
+                .reduce((sum, p) => sum + parseFloat(p.total), 0);
+            
+            const yesterdaySales = allPurchases
+                .filter(p => p.fecha && p.fecha.startsWith(yesterdayStr))
+                .reduce((sum, p) => sum + parseFloat(p.total), 0);
+            
+            // Cambio porcentual
+            const salesChange = yesterdaySales > 0 
+                ? ((todaySales - yesterdaySales) / yesterdaySales * 100).toFixed(1)
+                : 0;
+            
+            // Compras completadas
+            const completedPurchases = allPurchases.filter(p => p.estatus === 'Completado').length;
+            const todayCompleted = allPurchases.filter(p => 
+                p.estatus === 'Completado' && p.fecha && p.fecha.startsWith(today)
+            ).length;
+            
+            // Ticket promedio
+            const averageTicket = completedPurchases > 0 
+                ? totalSales / completedPurchases 
+                : 0;
+            
+            // Actualizar UI
+            document.getElementById('totalSales').textContent = '$' + totalSales.toFixed(2);
+            document.getElementById('totalPurchases').textContent = allPurchases.length;
+            document.getElementById('completedPurchases').textContent = completedPurchases;
+            document.getElementById('todayCompleted').textContent = todayCompleted;
+            document.getElementById('averageTicket').textContent = '$' + averageTicket.toFixed(2);
+            
+            const salesChangeEl = document.getElementById('salesChange');
+            salesChangeEl.textContent = (salesChange >= 0 ? '+' : '') + salesChange + '% hoy';
+            salesChangeEl.className = 'change ' + (salesChange >= 0 ? 'positive' : 'negative');
+            
+            const purchasesChange = allPurchases.filter(p => p.fecha && p.fecha.startsWith(today)).length;
+            document.getElementById('purchasesChange').textContent = '+' + purchasesChange + ' hoy';
+        }
+
+        // Renderizar tabla de compras
+        function renderPurchasesTable() {
+            const tbody = document.getElementById('purchasesTableBody');
+            
+            if (filteredPurchases.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                            No se encontraron compras.
+                        </td>
+                    </tr>
+                `;
+                updatePagination();
+                return;
+            }
+            
+            // Calcular índices para paginación
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pagePurchases = filteredPurchases.slice(startIndex, endIndex);
+            
+            let html = '';
+            
+            pagePurchases.forEach(purchase => {
+                // Determinar badge de estado
+                let statusBadge = '';
+                switch(purchase.estatus) {
+                    case 'Completado':
+                        statusBadge = '<span class="badge badge-completed">Completado</span>';
+                        break;
+                    case 'Pendiente':
+                        statusBadge = '<span class="badge badge-pending">Pendiente</span>';
+                        break;
+                    case 'Cancelado':
+                        statusBadge = '<span class="badge badge-cancelled">Cancelado</span>';
+                        break;
+                    case 'Reembolsado':
+                        statusBadge = '<span class="badge badge-refunded">Reembolsado</span>';
+                        break;
+                    default:
+                        statusBadge = '<span class="badge">' + purchase.estatus + '</span>';
+                }
+                
+                // Formatear fecha
+                const fecha = purchase.fecha ? 
+                    new Date(purchase.fecha).toLocaleDateString('es-MX', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : '--';
+                
+                // Formatear tarjeta
+                const tarjeta = purchase.numero_tarjeta ? 
+                    '****' + purchase.numero_tarjeta.slice(-4) : '--';
+                
+                // Contar productos
+                const productCount = purchase.items ? purchase.items.length : 0;
+                
+                html += `
+                    <tr>
+                        <td>#${purchase.id_compra}</td>
+                        <td>${purchase.cliente_nombre || 'Cliente'}<br>
+                            <small style="color: #666;">${purchase.cliente_email || ''}</small>
+                        </td>
+                        <td>${fecha}</td>
+                        <td><strong>$${parseFloat(purchase.total).toFixed(2)}</strong></td>
+                        <td>${statusBadge}</td>
+                        <td>${tarjeta}</td>
+                        <td>${productCount} producto${productCount !== 1 ? 's' : ''}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="view-btn" onclick="viewPurchaseDetails(${purchase.id_compra})" title="Ver detalles">
+                                    👁️
+                                </button>
+                                <button class="invoice-btn" onclick="generateInvoiceForPurchase(${purchase.id_compra})" title="Factura">
+                                    📄
+                                </button>
+                                <button class="edit-btn" onclick="changePurchaseStatus(${purchase.id_compra})" title="Cambiar estado">
+                                    ✏️
+                                </button>
+                                ${purchase.estatus === 'Completado' ? `
+                                    <button class="refund-btn" onclick="initiateRefund(${purchase.id_compra})" title="Reembolsar">
+                                        💰
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+            updatePagination();
+        }
+
+        // Actualizar paginación
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredPurchases.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            const prevBtn = pagination.querySelector('button:first-child');
+            const nextBtn = pagination.querySelector('button:last-child');
+            const currentPageSpan = document.getElementById('currentPage');
+            const totalPagesSpan = document.getElementById('totalPages');
+            
+            currentPageSpan.textContent = currentPage;
+            totalPagesSpan.textContent = totalPages;
+            
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= totalPages;
+        }
+
+        // Cambiar página
+        function changePage(direction) {
+            const totalPages = Math.ceil(filteredPurchases.length / itemsPerPage);
+            const newPage = currentPage + direction;
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderPurchasesTable();
+            }
+        }
+
+        // Buscar compras
+        function searchPurchases() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (searchTerm.trim() === '') {
+                filteredPurchases = [...allPurchases];
+            } else {
+                filteredPurchases = allPurchases.filter(purchase => 
+                    purchase.id_compra.toString().includes(searchTerm) ||
+                    (purchase.cliente_nombre && purchase.cliente_nombre.toLowerCase().includes(searchTerm)) ||
+                    (purchase.cliente_email && purchase.cliente_email.toLowerCase().includes(searchTerm)) ||
+                    (purchase.numero_tarjeta && purchase.numero_tarjeta.includes(searchTerm))
+                );
+            }
+            
+            currentPage = 1;
+            renderPurchasesTable();
+        }
+
+        // Filtrar compras
+        function filterPurchases() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const sortBy = document.getElementById('sortBy').value;
+            
+            filteredPurchases = allPurchases.filter(purchase => {
+                // Filtrar por estado
+                if (statusFilter && purchase.estatus !== statusFilter) return false;
+                
+                // Filtrar por fecha
+                if (startDate && purchase.fecha) {
+                    const purchaseDate = purchase.fecha.split(' ')[0];
+                    if (purchaseDate < startDate) return false;
+                }
+                
+                if (endDate && purchase.fecha) {
+                    const purchaseDate = purchase.fecha.split(' ')[0];
+                    if (purchaseDate > endDate) return false;
+                }
+                
+                return true;
+            });
+            
+            // Ordenar
+            filteredPurchases.sort((a, b) => {
+                switch(sortBy) {
+                    case 'fecha_asc':
+                        return new Date(a.fecha) - new Date(b.fecha);
+                    case 'fecha_desc':
+                        return new Date(b.fecha) - new Date(a.fecha);
+                    case 'total_asc':
+                        return parseFloat(a.total) - parseFloat(b.total);
+                    case 'total_desc':
+                        return parseFloat(b.total) - parseFloat(a.total);
+                    default:
+                        return new Date(b.fecha) - new Date(a.fecha);
+                }
+            });
+            
+            currentPage = 1;
+            renderPurchasesTable();
+        }
+
+        // Ver detalles de compra
+        async function viewPurchaseDetails(purchaseId) {
+            try {
+                const purchase = allPurchases.find(p => p.id_compra == purchaseId);
+                if (!purchase) {
+                    showNotification('Compra no encontrada', 'error');
+                    return;
+                }
+                
+                // Cargar detalles adicionales si es necesario
+                const response = await fetch(`api.php?action=getPurchaseDetails&purchaseId=${purchaseId}`);
+                const data = await response.json();
+                
+                if (data.success && data.purchase) {
+                    displayPurchaseDetails(data.purchase);
+                } else {
+                    displayPurchaseDetails(purchase);
+                }
+                
+                // Configurar botón de acción de estado
+                const statusActionBtn = document.getElementById('statusActionBtn');
+                statusActionBtn.onclick = () => changePurchaseStatus(purchaseId);
+                statusActionBtn.textContent = 'Cambiar Estado';
+                statusActionBtn.style.background = '#ff9800';
+                
+                openModal();
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error al cargar detalles', 'error');
+            }
+        }
+
+        // Mostrar detalles de compra en modal
+        function displayPurchaseDetails(purchase) {
+            const detailsContainer = document.getElementById('purchaseDetails');
+            
+            // Formatear items de productos
+            let productsHTML = '';
+            if (purchase.items && purchase.items.length > 0) {
+                productsHTML = `
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Tipo</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unit.</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${purchase.items.map(item => `
+                                <tr>
+                                    <td>${item.nombre_producto || 'Producto'}</td>
+                                    <td>${item.tipo || '--'}</td>
+                                    <td>${item.cantidad || 1}</td>
+                                    <td>$${parseFloat(item.precio || 0).toFixed(2)}</td>
+                                    <td>$${(parseFloat(item.precio || 0) * parseInt(item.cantidad || 1)).toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                            <tr class="total-row">
+                                <td colspan="4" style="text-align: right;">Total:</td>
+                                <td><strong>$${parseFloat(purchase.total).toFixed(2)}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                productsHTML = '<p>No hay información de productos disponible.</p>';
+            }
+            
+            // Determinar badge de estado
+            let statusBadge = '';
+            switch(purchase.estatus) {
+                case 'Completado':
+                    statusBadge = '<span class="badge badge-completed">Completado</span>';
+                    break;
+                case 'Pendiente':
+                    statusBadge = '<span class="badge badge-pending">Pendiente</span>';
+                    break;
+                case 'Cancelado':
+                    statusBadge = '<span class="badge badge-cancelled">Cancelado</span>';
+                    break;
+                case 'Reembolsado':
+                    statusBadge = '<span class="badge badge-refunded">Reembolsado</span>';
+                    break;
+                default:
+                    statusBadge = '<span class="badge">' + purchase.estatus + '</span>';
+            }
+            
+            const fecha = purchase.fecha ? 
+                new Date(purchase.fecha).toLocaleString('es-MX', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }) : '--';
+            
+            detailsContainer.innerHTML = `
+                <div class="detail-section">
+                    <h3>📋 Información de la Compra</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">ID Compra:</span>
+                        <span class="detail-value">#${purchase.id_compra}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Fecha y Hora:</span>
+                        <span class="detail-value">${fecha}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estado:</span>
+                        <span class="detail-value">${statusBadge}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Total:</span>
+                        <span class="detail-value">$${parseFloat(purchase.total).toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h3>👤 Información del Cliente</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Nombre:</span>
+                        <span class="detail-value">${purchase.cliente_nombre || 'No disponible'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Email:</span>
+                        <span class="detail-value">${purchase.cliente_email || 'No disponible'}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h3>💳 Información de Pago</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Tarjeta:</span>
+                        <span class="detail-value">${purchase.numero_tarjeta ? '****' + purchase.numero_tarjeta.slice(-4) : 'No disponible'}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-section" style="grid-column: 1 / -1;">
+                    <h3>🛒 Productos Comprados</h3>
+                    ${productsHTML}
+                </div>
+            `;
+            
+            currentPurchaseId = purchase.id_compra;
+        }
+
+        // Cambiar estado de compra
+        function changePurchaseStatus(purchaseId) {
+            currentPurchaseId = purchaseId;
+            confirmActionType = 'changeStatus';
+            
+            document.getElementById('confirmTitle').textContent = 'Cambiar Estado de Compra';
+            document.getElementById('confirmMessage').textContent = `Selecciona el nuevo estado para la compra #${purchaseId}:`;
+            document.getElementById('confirmOptions').style.display = 'block';
+            document.getElementById('refundReason').style.display = 'none';
+            document.getElementById('confirmActionBtn').textContent = 'Cambiar Estado';
+            
+            openConfirmModal();
+        }
+
+        // Iniciar reembolso
+        function initiateRefund(purchaseId) {
+            currentPurchaseId = purchaseId;
+            confirmActionType = 'refund';
+            
+            document.getElementById('confirmTitle').textContent = 'Iniciar Reembolso';
+            document.getElementById('confirmMessage').innerHTML = `
+                ¿Estás seguro de que quieres reembolsar la compra #${purchaseId}?<br><br>
+                <small style="color: #d32f2f;">Esta acción cambiará el estado a "Reembolsado" y no se puede deshacer.</small>
+            `;
+            document.getElementById('confirmOptions').style.display = 'block';
+            document.getElementById('newStatus').value = 'Reembolsado';
+            document.getElementById('refundReason').style.display = 'block';
+            document.getElementById('confirmActionBtn').textContent = 'Confirmar Reembolso';
+            
+            openConfirmModal();
+        }
+
+        // Confirmar acción
+        async function confirmAction() {
+            try {
+                let requestData = {
+                    purchaseId: currentPurchaseId
+                };
+                
+                if (confirmActionType === 'changeStatus') {
+                    requestData.newStatus = document.getElementById('newStatus').value;
+                } else if (confirmActionType === 'refund') {
+                    requestData.newStatus = 'Reembolsado';
+                    requestData.refundReason = document.getElementById('refundReason').value;
+                }
+                
+                const response = await fetch('api.php?action=updatePurchaseStatus', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(
+                        confirmActionType === 'refund' ? 'Reembolso procesado exitosamente' : 'Estado actualizado',
+                        'success'
+                    );
+                    closeConfirmModal();
+                    loadPurchases(); // Recargar datos
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                showNotification('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Generar factura
+        function generateInvoice() {
+            if (!currentPurchaseId) return;
+            
+            window.open(`api.php?action=generateInvoice&purchaseId=${currentPurchaseId}`, '_blank');
+        }
+
+        function generateInvoiceForPurchase(purchaseId) {
+            window.open(`api.php?action=generateInvoice&purchaseId=${purchaseId}`, '_blank');
+        }
+
+        // Actualizar gráficos
+        function updateCharts() {
+            // Gráfico de ventas por día (últimos 7 días)
+            const salesChartEl = document.getElementById('salesChart');
+            const last7Days = getLast7Days();
+            const salesByDay = calculateSalesByDay(last7Days);
+            
+            // Implementar gráfico real con una librería como Chart.js
+           salesChartEl.innerHTML = `
+<div style="padding: 20px; text-align: center;">
+    <h4 style="color: #666; margin-bottom: 20px;">
+        Ventas de los últimos 7 días
+    </h4>
+
+    <div style="
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 10px;
+        height: 200px;
+        max-height: 200px;
+        overflow: hidden;
+    ">
+        ${salesByDay.map(day => {
+            const maxBarHeight = 180;
+            const barHeight = Math.min(parseFloat(day.total) * 2, maxBarHeight);
+
+            return `
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <div style="
+                        width: 30px;
+                        height: ${barHeight}px;
+                        background: #8b0000;
+                        border-radius: 4px;
+                    "></div>
+                    <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                        ${day.day.slice(5)}
+                    </div>
+                    <div style="font-size: 11px; font-weight: bold;">
+                        $${day.total}
+                    </div>
+                </div>
+            `;
+        }).join('')}
+    </div>
+</div>
+`;
+ 
+            // Top productos
+            const topProductsChartEl = document.getElementById('topProductsChart');
+            const topProducts = getTopProducts(5);
+            
+            topProductsChartEl.innerHTML = `
+                <div style="padding: 20px;">
+                    <div style="margin-bottom: 15px;">
+                        ${topProducts.map((product, index) => `
+                            <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <span style="font-weight: bold; color: #8b0000;">${index + 1}.</span>
+                                    <span style="margin-left: 10px;">${product.name}</span>
+                                </div>
+                                <div style="font-weight: bold;">${product.sales} ventas</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Funciones auxiliares para gráficos
+        function getLast7Days() {
+            const days = [];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                days.push(date.toISOString().split('T')[0]);
+            }
+            return days;
+        }
+
+        function calculateSalesByDay(days) {
+            return days.map(day => {
+                const sales = allPurchases
+                    .filter(p => p.fecha && p.fecha.startsWith(day) && p.estatus === 'Completado')
+                    .reduce((sum, p) => sum + parseFloat(p.total), 0);
+                
+                return {
+                    day: day,
+                    total: sales.toFixed(2)
+                };
+            });
+        }
+
+        function getTopProducts(limit) {
+            const productSales = {};
+            
+            allPurchases.forEach(purchase => {
+                if (purchase.items) {
+                    purchase.items.forEach(item => {
+                        const productName = item.nombre_producto || 'Producto desconocido';
+                        productSales[productName] = (productSales[productName] || 0) + 1;
+                    });
+                }
+            });
+            
+            return Object.entries(productSales)
+                .map(([name, sales]) => ({ name, sales }))
+                .sort((a, b) => b.sales - a.sales)
+                .slice(0, limit);
+        }
+
+        // Funciones de modal
+        function openModal() {
+            document.getElementById('purchaseModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('purchaseModal').style.display = 'none';
+            currentPurchaseId = null;
+        }
+
+        function openConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+            currentPurchaseId = null;
+            confirmActionType = '';
+            document.getElementById('confirmOptions').style.display = 'none';
+            document.getElementById('refundReason').value = '';
+        }
+
+        // Funciones de utilidad
+        function showLoading(show) {
+            const tbody = document.getElementById('purchasesTableBody');
+            if (show) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="loading">
+                            <div class="spinner"></div>
+                            <p>Cargando compras...</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Funciones de exportación
+        function exportToCSV() {
+            if (filteredPurchases.length === 0) {
+                showNotification('No hay datos para exportar', 'error');
+                return;
+            }
+            
+            const headers = ['ID Compra', 'Cliente', 'Fecha', 'Total', 'Estado', 'Método Pago', 'Productos'];
+            const csvContent = [
+                headers.join(','),
+                ...filteredPurchases.map(purchase => [
+                    purchase.id_compra,
+                    `"${purchase.cliente_nombre || ''}"`,
+                    `"${purchase.fecha || ''}"`,
+                    purchase.total,
+                    purchase.estatus,
+                    purchase.numero_tarjeta ? '****' + purchase.numero_tarjeta.slice(-4) : '',
+                    purchase.items ? purchase.items.length : 0
+                ].join(','))
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `compras_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+
+        function exportToExcel() {
+            showNotification('Exportación a Excel en desarrollo...', 'info');
+        }
+
+        function printReport() {
+            window.print();
+        }
+
+        function refreshData() {
+            loadPurchases();
+            showNotification('Datos actualizados', 'success');
+        }
+
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Buscar con Enter
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') searchPurchases();
+            });
+            
+            // Botón de logout
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                    localStorage.clear();
+                    window.location.href = 'login.html';
+                }
+            });
+            
+            // Confirmar acción
+            document.getElementById('confirmActionBtn').addEventListener('click', confirmAction);
+            
+            // Cerrar modales haciendo clic fuera
+            window.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                }
+            });
+        }
+
+        // Cargar datos de ejemplo para desarrollo
+        function loadSampleData() {
+            const sampleItems = [
+                { tipo: 'album', nombre_producto: 'Álbum Ejemplo 1', cantidad: 1, precio: 199.99 },
+                { tipo: 'cancion', nombre_producto: 'Canción Ejemplo 1', cantidad: 2, precio: 29.99 }
+            ];
+            
+            allPurchases = [
+                {
+                    id_compra: 1001,
+                    cliente_nombre: 'Juan Pérez',
+                    cliente_email: 'juan@email.com',
+                    fecha: '2024-12-15 14:30:00',
+                    total: 259.97,
+                    estatus: 'Completado',
+                    numero_tarjeta: '4111111111111111',
+                    items: sampleItems
+                },
+                {
+                    id_compra: 1002,
+                    cliente_nombre: 'María García',
+                    cliente_email: 'maria@email.com',
+                    fecha: '2024-12-14 10:15:00',
+                    total: 199.99,
+                    estatus: 'Pendiente',
+                    numero_tarjeta: '5555555555554444',
+                    items: [{ tipo: 'album', nombre_producto: 'Álbum Ejemplo 2', cantidad: 1, precio: 199.99 }]
+                },
+                {
+                    id_compra: 1003,
+                    cliente_nombre: 'Carlos López',
+                    cliente_email: 'carlos@email.com',
+                    fecha: '2024-12-13 16:45:00',
+                    total: 89.97,
+                    estatus: 'Cancelado',
+                    numero_tarjeta: '378282246310005',
+                    items: [{ tipo: 'cancion', nombre_producto: 'Canción Ejemplo 3', cantidad: 3, precio: 29.99 }]
+                },
+                {
+                    id_compra: 1004,
+                    cliente_nombre: 'Ana Martínez',
+                    cliente_email: 'ana@email.com',
+                    fecha: '2024-12-12 09:20:00',
+                    total: 429.95,
+                    estatus: 'Completado',
+                    numero_tarjeta: '6011111111111117',
+                    items: [
+                        { tipo: 'album', nombre_producto: 'Álbum Premium', cantidad: 1, precio: 299.99 },
+                        { tipo: 'cancion', nombre_producto: 'Canción Extra', cantidad: 5, precio: 25.99 }
+                    ]
+                }
+            ];
+            
+            // Agregar más datos de ejemplo para las estadísticas
+            for (let i = 5; i <= 15; i++) {
+                allPurchases.push({
+                    id_compra: 1000 + i,
+                    cliente_nombre: 'Cliente Ejemplo ' + i,
+                    cliente_email: 'cliente' + i + '@email.com',
+                    fecha: `2024-12-${11 + i} ${10 + i}:${i * 3}:00`,
+                    total: 100 + (i * 50),
+                    estatus: i % 3 === 0 ? 'Pendiente' : 'Completado',
+                    numero_tarjeta: '4111111111111111',
+                    items: [{ tipo: 'album', nombre_producto: `Álbum ${i}`, cantidad: 1, precio: 100 + (i * 50) }]
+                });
+            }
+            
+            filteredPurchases = [...allPurchases];
+            updatePurchaseStats();
+            renderPurchasesTable();
+            updateCharts();
+        }
+    </script>
+</body>
+</html>

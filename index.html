@@ -3,40 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Store</title>
+    <title>SoundSpace - Álbumes</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-    <!-- BOTÓN QUE MUESTRA LA SIDEBAR (oculto al inicio) -->
+    <!-- BOTÓN QUE MUESTRA LA SIDEBAR -->
     <button id="showSidebarBtn" class="show-sidebar-btn">➕</button>
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="sidebar-header">
-            
             <button class="sidebar-hide-btn">🗕</button>
         </div>
 
-        <h2 class="logo">MusicApp</h2>
-
-        <nav class="menu">
+         <nav class="menu">
             <p class="section-title">Navegación</p>
-            <a href="#">Inicio</a>
-            <a href="#">Explorar</a>
-            <a href="#">Géneros</a>
-            <a href="#">Tendencias</a>
-            <a href="#">Artistas</a>
-            <a href="#">Álbumes</a>
-            <a href="#">Mis Compras</a>
-            <a href="#">Ajustes</a>
-            <a href="#">Ayuda</a>
+            <a href="index.html" class="active">Inicio</a>
+            <a href="albumes.html">Géneros</a>
+            <a href="artistas.html">Artistas</a>
+            <a href="compras.html">Mis Compras</a>
+            <a href="tarjetas.html">Tarjetas</a>
 
             <p class="section-title">Del usuario</p>
-            <a href="#">Biblioteca</a>
-            <a href="#">Favoritos</a>
-            <a href="#">Historial</a>
+            <a href="biblioteca.html">Biblioteca</a>
+            <a href="favoritos.html">Favoritos</a>
         </nav>
     </aside>
 
@@ -44,47 +34,327 @@
     <div class="content">
         <!-- HEADER -->
         <header class="header">
-            <h1>Tienda de Música</h1>
+            <div class="header-logo">
+                <img src="images/logo.png" alt="SoundSpace">
+            </div>
+
             <div class="icons">
-                <a href="·" class="icon-btn">🛒</a>
-                <a href="login.html" class="icon-btn">👤</a>
+                <a href="carrito.html" class="icon-btn">🛒</a>
+
+                <div class="user-dropdown">
+                    <button class="user-btn icon-btn">👤</button>
+
+                    <div class="dropdown-menu">
+                        <div class="user-info">
+                            <strong id="userNameDisplay"></strong><br>
+                            <small id="userEmailDisplay"></small>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+                        <button id="logoutBtnDropdown" class="dropdown-item logout-btn">Cerrar Sesión</button>
+                    </div>
+                </div>
             </div>
         </header>
 
+        <!-- SECCIÓN PRINCIPAL -->
         <main>
-            <h2>Álbumes disponibles</h2>
+            <section class="catalog-section">
+                <div class="catalog-container">
+                    <div class="catalog-header">
+                        <h2>Catálogo SoundSpace</h2>
+                        <p>Explora nuestros álbumes disponibles.</p>
+                    </div>
 
-            <div class="album-grid">
-
-                <div class="album-card">
-                    <img src="https://via.placeholder.com/150" alt="">
-                    <h3>Álbum 1</h3>
-                    <p>Artista</p>
-                    <button>Comprar</button>
+                    <!-- CONTENEDOR DINÁMICO -->
+                    <table class="catalog" id="albumTable">
+                        <tbody id="albumBody"></tbody>
+                    </table>
                 </div>
-
-                <div class="album-card">
-                    <img src="https://via.placeholder.com/150" alt="">
-                    <h3>Álbum 2</h3>
-                    <p>Artista</p>
-                    <button>Comprar</button>
-                </div>
-
-                <div class="album-card">
-                    <img src="https://via.placeholder.com/150" alt="">
-                    <h3>Álbum 3</h3>
-                    <p>Artista</p>
-                    <button>Comprar</button>
-                </div>
-
-            </div>
+            </section>
         </main>
 
         <footer>
-            <p>© 2025 Music Store - Todos los derechos reservados</p>
+            <p>© 2025 Soundspace - Todos los derechos reservados</p>
         </footer>
     </div>
 
     <script src="main.js"></script>
+
+    <!-- SCRIPT PARA CARGAR ÁLBUMES -->
+    <script>
+        // VERIFICACIÓN DE LOGIN - ESTO DEBE IR AL PRINCIPIO DEL SCRIPT
+document.addEventListener("DOMContentLoaded", function () {
+    // Verificar si el usuario está logueado
+    const userId = localStorage.getItem('userId');
+    const userEmail = localStorage.getItem('userEmail');
+    
+    console.log('Verificando login...');
+    console.log('UserID en localStorage:', userId);
+    console.log('UserEmail en localStorage:', userEmail);
+    
+    // Si no hay usuario logueado, redirigir a login
+    if (!userId || !userEmail) {
+        console.log('No hay usuario logueado, redirigiendo a login...');
+        
+        // Verificar si ya estamos en la página de login para evitar bucle infinito
+        const currentPage = window.location.pathname.split('/').pop();
+        if (currentPage !== 'login.html' && 
+            currentPage !== 'register.html' && 
+            currentPage !== 'cperdida.html') {
+            alert('Por favor, inicie sesión para continuar');
+            window.location.href = 'login.html';
+        }
+    } else {
+        console.log('Usuario logueado:', userEmail);
+        // Continuar con el resto del código...
+    }
+});
+        function getAlbumImages(idAlbum) {
+            const startImage = (idAlbum - 1) * 4 + 1;
+            return {
+                mainImage: `images/${startImage}.png`,
+                thumbnails: [
+                    `images/${startImage}.png`,
+                    `images/${startImage + 1}.png`,
+                    `images/${startImage + 2}.png`,
+                    `images/${startImage + 3}.png`
+                ]
+            };
+        }
+
+       // En canciones.html, modificar la función openAlbumDetails en index.html y albumes.html
+function openAlbumDetails(albumData) {
+    // Guardar la página actual dinámicamente
+    const currentPage = window.location.pathname.split('/').pop();
+    sessionStorage.setItem('lastAlbumPage', currentPage);
+    
+    localStorage.setItem('selectedAlbum', JSON.stringify({
+        id: albumData.id_album,
+        titulo: albumData.titulo,
+        artista: albumData.nombre_artista,
+        anio: albumData.anio,
+        descripcion: albumData.descripcion_album,
+        genero: albumData.genero_album,
+        temas: albumData.cantidadtemas,
+        duracion: albumData.duracion_total,
+        precio: albumData.precio || 600,
+        images: getAlbumImages(albumData.id_album)
+    }));
+    
+    window.location.href = 'canciones.html';
+}
+
+// Función específica para index.html
+        // Función específica para index.html
+async function addToCartFromPage(albumId, albumName, price, e) {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+        alert('Debes iniciar sesión para agregar productos al carrito');
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    try {
+        // Agregar al carrito
+        const addResponse = await fetch('api.php?action=addToCart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: userId,
+                tipo: 'album',
+                id_producto: albumId,
+                precio: price,
+                cantidad: 1
+            })
+        });
+        
+        const addResult = await addResponse.json();
+        
+        if (addResult.success) {
+            // Feedback visual para éxito
+            const button = e.target;
+            const originalText = button.textContent;
+            button.textContent = '✓ Añadido';
+            button.style.background = 'green';
+            button.style.color = 'white';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = '';
+                button.style.color = '';
+                button.disabled = false;
+            }, 1500);
+            
+            // Actualizar contador
+            if (typeof updateCartCount === 'function') {
+                updateCartCount();
+            }
+        } else {
+            // Mostrar mensaje de error específico
+            if (addResult.code === 'ALREADY_PURCHASED') {
+                // Si ya lo compró, ofrecer ir a la biblioteca
+                if (confirm('Ya has comprado este álbum. ¿Te gustaría verlo en tu biblioteca?')) {
+                    window.location.href = 'biblioteca.html';
+                }
+            } else if (addResult.code === 'ALREADY_IN_CART') {
+                // Si ya está en el carrito
+                const button = e.target;
+                const originalText = button.textContent;
+                button.textContent = '✓ Ya en carrito';
+                button.style.background = '#ff9900';
+                button.style.color = 'white';
+                button.disabled = true;
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                    button.style.color = '';
+                    button.disabled = false;
+                }, 2000);
+            } else {
+                // Otros errores
+                alert('Error: ' + addResult.message);
+            }
+        }
+    } catch (error) {
+        console.error('Error agregando al carrito:', error);
+        alert('Error de conexión al servidor');
+    }
+}
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+            fetch("api.php?action=getAlbums")
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) return;
+
+                    let tbody = document.getElementById("albumBody");
+                    tbody.innerHTML = "";
+
+                    let albumsPerRow = 3;
+                    let currentRow;
+
+                    data.albums.forEach((album, index) => {
+                        if (index % albumsPerRow === 0) {
+                            currentRow = document.createElement("tr");
+                            tbody.appendChild(currentRow);
+                        }
+
+                        const images = getAlbumImages(album.id_album);
+                        const precio = album.precio ? `$${album.precio} MXN` : '$600 MXN';
+                        
+                        let thumbsHTML = "";
+                        for (let i = 0; i < 4; i++) {
+                            const imgNum = (album.id_album - 1) * 4 + i + 1;
+                            thumbsHTML += `
+                                <td>
+                                    <img class="thumb" 
+                                         src="images/${imgNum}.png" 
+                                         alt="${album.titulo} - Imagen ${i + 1}"
+                                         onerror="this.style.display='none'">
+                                </td>
+                            `;
+                        }
+
+                        let cell = document.createElement("td");
+                        
+                        let html = `
+                            <div class="product-card album-clickable" data-album-id="${album.id_album}">
+                                <div class="product-header">
+                                    <figure class="product-image">
+                                        <img src="${images.mainImage}" 
+                                             alt="${album.titulo}"
+                                             onerror="this.src='images/placeholder.png'">
+                                    </figure>
+                                    <div class="product-title-info">
+                                        <h3 class="product-name">${album.titulo}</h3>
+                                        <div class="product-artist">${album.nombre_artista}</div>
+                                    </div>
+                                </div>
+
+                                <p class="product-description">${album.descripcion_album}</p>
+
+                                <div class="product-meta-row">
+                                    <span class="meta-item year">${album.anio}</span>
+                                    <span class="meta-item tracks">${album.cantidadtemas} temas</span>
+                                    <span class="meta-item price">${precio}</span>
+                                </div>
+
+                                <div class="product-thumbs-row">
+                                    <table class="thumbs"><tr>${thumbsHTML}</tr></table>
+                                </div>
+
+                                <div class="product-action-row">
+                                    <button class="buy-btn" data-id="${album.id_album}">Agregar al carrito</button>
+                                </div>
+                            </div>
+                        `;
+
+                        cell.innerHTML = html;
+                        
+                        const productCard = cell.querySelector('.product-card');
+                        productCard.addEventListener('click', function(e) {
+                            if (e.target.classList.contains('buy-btn') || 
+                                e.target.classList.contains('thumb')) {
+                                return;
+                            }
+                            
+                            openAlbumDetails(album);
+                        });
+                        
+                        productCard.style.cursor = 'pointer';
+                        productCard.style.transition = 'transform 0.2s';
+                        productCard.addEventListener('mouseenter', function() {
+                            this.style.transform = 'translateY(-5px)';
+                            this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+                        });
+                        productCard.addEventListener('mouseleave', function() {
+                            this.style.transform = 'translateY(0)';
+                            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                        });
+
+                        currentRow.appendChild(cell);
+
+                        if (index === data.albums.length - 1) {
+                            let remainingCells = albumsPerRow - (index % albumsPerRow) - 1;
+                            for (let i = 0; i < remainingCells; i++) {
+                                let emptyCell = document.createElement("td");
+                                currentRow.appendChild(emptyCell);
+                            }
+                        }
+                    });
+                    
+                    // Event listeners para botones de compra
+                    document.querySelectorAll('.buy-btn').forEach(button => {
+                        button.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            
+                            const albumId = this.getAttribute('data-id');
+                            const albumName = this.closest('.product-card').querySelector('.product-name').textContent;
+                            const priceElement = this.closest('.product-card').querySelector('.meta-item.price');
+                            const priceText = priceElement ? priceElement.textContent : '$600 MXN';
+                            const price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 600;
+                            
+                            // Llamar a la función del carrito
+                            addToCartFromPage(albumId, albumName, price, e);
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error("Error al cargar álbumes:", error);
+                    let tbody = document.getElementById("albumBody");
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:#8b0000;">
+                        Error al cargar los álbumes. Por favor, intente más tarde.
+                    </td></tr>`;
+                });
+        });
+    </script>
 </body>
 </html>

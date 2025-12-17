@@ -1,0 +1,1132 @@
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles del Álbum - SoundSpace</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- BOTÓN QUE MUESTRA LA SIDEBAR -->
+    <button id="showSidebarBtn" class="show-sidebar-btn">➕</button>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <button class="sidebar-hide-btn">🗕</button>
+        </div>
+
+        <nav class="menu">
+            <p class="section-title">Navegación</p>
+            <a href="index.html">Inicio</a>
+            <a href="albumes.html">Géneros</a>
+            <a href="artistas.html">Artistas</a>
+            <a href="compras.html">Mis Compras</a>
+            <a href="tarjetas.html">Tarjetas</a>
+
+            <p class="section-title">Del usuario</p>
+            <a href="biblioteca.html">Biblioteca</a>
+            <a href="favoritos.html">Favoritos</a>
+        </nav>
+    </aside>
+    
+
+    <!-- CONTENIDO -->
+    <div class="content">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-logo">
+                <img src="images/logo.png" alt="SoundSpace">
+            </div>
+
+            <div class="icons">
+                <a href="carrito.html" class="icon-btn">🛒</a>
+
+                <div class="user-dropdown">
+                    <button class="user-btn icon-btn">👤</button>
+
+                    <div class="dropdown-menu">
+                        <div class="user-info">
+                            <strong id="userNameDisplay"></strong><br>
+                            <small id="userEmailDisplay"></small>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+                        <button id="logoutBtnDropdown" class="dropdown-item logout-btn">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- SECCIÓN PRINCIPAL -->
+        <main>
+            <section class="catalog-section">
+                <div class="catalog-container">
+                    <div class="catalog-header">
+                        <button onclick="goBack()" class="back-btn">← Volver</button>
+                        <h2 id="albumTitle">Detalles del Álbum</h2>
+                        <p id="albumArtist" style="color: #333;">Cargando información...</p>
+                    </div>
+
+                    <!-- INFORMACIÓN DEL ÁLBUM -->
+                    <div class="album-details-container">
+                        <div class="album-header">
+                            <div class="album-cover">
+                                <img id="albumCover" src="" alt="Portada del álbum">
+                            </div>
+                            <div class="album-info">
+                                <h1 id="albumName" style="color: #222;">Cargando...</h1>
+                                <div class="album-meta">
+                                    <span class="meta-item" id="albumYear">Año: --</span>
+                                    <span class="meta-item" id="albumGenre">Género: --</span>
+                                    <span class="meta-item" id="albumTracks">Temas: --</span>
+                                    <span class="meta-item" id="albumDuration">Duración: --</span>
+                                </div>
+                                <p id="albumDescription" class="album-description"></p>
+                                <div class="album-price" style="font-weight: bold;" id="albumPriceDisplay">$ -- MXN</div>
+                                <div class="album-actions">
+                                    <button class="buy-btn" id="buyAlbumBtn">Añadir álbum al carrito</button>
+                                    <button class="favorite-btn" id="favoriteBtn">❤️ Agregar a Favoritos</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CALIFICACIÓN -->
+                        <div class="rating-section">
+                            <h3>Califica este álbum</h3>
+                            <div class="rating-stars">
+                                <span class="star" data-rating="1">★</span>
+                                <span class="star" data-rating="2">★</span>
+                                <span class="star" data-rating="3">★</span>
+                                <span class="star" data-rating="4">★</span>
+                                <span class="star" data-rating="5">★</span>
+                            </div>
+                            <div class="rating-display">
+                                <span id="currentRating" style="font-weight: bold;">0.0</span> / 5.0
+                                <span id="ratingCount">(0 calificaciones)</span>
+                            </div>
+                            <div class="rating-actions">
+                                <button id="submitRatingBtn" class="submit-rating-btn">Enviar Calificación</button>
+                            </div>
+                        </div>
+
+                        <!-- LISTA DE CANCIONES -->
+                        <div class="songs-section">
+                            <h3>Lista de Canciones</h3>
+                            <div id="songsList" class="songs-list">
+                                <p style="color: #666; text-align: center; padding: 20px;">Cargando canciones...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2025 Soundspace - Todos los derechos reservados</p>
+        </footer>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // ==================== DEBUG ====================
+
+console.log('=== CANCIONES.HHTML DEBUG ===');
+console.log('lastAlbumPage:', sessionStorage.getItem('lastAlbumPage'));
+console.log('artistasPageState:', sessionStorage.getItem('artistasPageState'));
+console.log('selectedAlbum:', localStorage.getItem('selectedAlbum'));
+        // Variables globales
+        let currentAlbum = null;
+        let userRating = 0;
+        let isFavorite = false;
+        let currentUserId = null;
+        let albumSongs = [];
+
+        // ==================== FUNCIONES BÁSICAS ====================
+
+        // Función para volver atrás
+      function goBack() {
+    const lastPage = sessionStorage.getItem('lastAlbumPage') || 'index.html';
+    console.log('DEBUG - Volviendo a:', lastPage);
+    console.log('DEBUG - lastAlbumPage en sessionStorage:', sessionStorage.getItem('lastAlbumPage'));
+    window.location.href = lastPage;
+}
+        // Cargar datos del álbum
+        function loadAlbumData() {
+            console.log('Cargando datos del álbum...');
+            
+            const albumData = localStorage.getItem('selectedAlbum');
+            
+            if (!albumData) {
+                console.error('No hay datos de álbum en localStorage');
+                showErrorMessage('No se encontró información del álbum. Volviendo...');
+                setTimeout(() => {
+                    goBack();
+                }, 3000);
+                return;
+            }
+
+            try {
+                currentAlbum = JSON.parse(albumData);
+                console.log('Álbum cargado:', currentAlbum);
+                
+                displayAlbumDetails();
+                loadSongs();
+                setupRatingSystem();
+                setupButtons();
+                
+                // Obtener ID de usuario
+                currentUserId = localStorage.getItem('userId');
+                if (currentUserId) {
+                    console.log('ID de usuario obtenido:', currentUserId);
+                    setTimeout(() => {
+                        loadRatingFromDB();
+                        checkFavoriteStatus();
+                    }, 500);
+                } else {
+                    console.log('Usuario no autenticado');
+                }
+                
+            } catch (error) {
+                console.error('Error al parsear datos del álbum:', error);
+                showErrorMessage('Error al cargar información del álbum');
+            }
+        }
+
+        // Mostrar detalles del álbum
+        function displayAlbumDetails() {
+            if (!currentAlbum) return;
+
+            console.log('Mostrando detalles del álbum:', currentAlbum);
+            
+            // Título y artista
+            document.getElementById('albumTitle').textContent = currentAlbum.titulo || 'Detalles del Álbum';
+            document.getElementById('albumArtist').textContent = `Artista: ${currentAlbum.artista || 'Desconocido'}`;
+            document.getElementById('albumName').textContent = currentAlbum.titulo || 'Cargando...';
+            
+            // Metadatos
+            document.getElementById('albumYear').textContent = `Año: ${currentAlbum.anio || '--'}`;
+            document.getElementById('albumGenre').textContent = `Género: ${currentAlbum.genero || '--'}`;
+            document.getElementById('albumTracks').textContent = `Temas: ${currentAlbum.temas || '--'}`;
+            document.getElementById('albumDuration').textContent = `Duración: ${formatDuration(currentAlbum.duracion) || '--:--'}`;
+            document.getElementById('albumDescription').textContent = currentAlbum.descripcion || 'Sin descripción disponible';
+            
+            // Precio
+            const albumPrice = currentAlbum.precio ? parseFloat(currentAlbum.precio) : 600;
+            document.getElementById('albumPriceDisplay').textContent = `$${albumPrice.toFixed(2)} MXN`;
+            
+            // Imagen del álbum
+            const albumCover = document.getElementById('albumCover');
+            if (currentAlbum.images && currentAlbum.images.mainImage) {
+                albumCover.src = currentAlbum.images.mainImage;
+                albumCover.alt = `Portada de ${currentAlbum.titulo}`;
+                albumCover.onerror = function() {
+                    this.src = 'images/placeholder.png';
+                };
+            } else {
+                albumCover.src = 'images/placeholder.png';
+                albumCover.alt = 'Portada no disponible';
+            }
+        }
+
+        // Formatear duración
+        function formatDuration(duration) {
+            if (!duration) return '--:--';
+            
+            try {
+                if (!isNaN(duration) && duration.toString().indexOf(':') === -1) {
+                    const minutes = Math.floor(duration / 60);
+                    const seconds = duration % 60;
+                    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }
+                return duration;
+            } catch (error) {
+                return '--:--';
+            }
+        }
+
+        // ==================== FUNCIONES DEL CARRITO ====================
+
+        // Función para agregar al carrito desde canciones.html
+        // Función específica para index.html
+// Función para agregar al carrito desde canciones.html
+async function addToCartFromCanciones(albumId, albumName, price, e) {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+        alert('Debes iniciar sesión para agregar productos al carrito');
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    try {
+        // Agregar al carrito
+        const addResponse = await fetch('api.php?action=addToCart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: userId,
+                tipo: 'album',
+                id_producto: albumId,
+                precio: price,
+                cantidad: 1
+            })
+        });
+        
+        const addResult = await addResponse.json();
+        
+        if (addResult.success) {
+            // Feedback visual para éxito
+            const button = e.target;
+            const originalText = button.textContent;
+            button.textContent = '✓ Añadido';
+            button.style.background = 'green';
+            button.style.color = 'white';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = '';
+                button.style.color = '';
+                button.disabled = false;
+            }, 1500);
+            
+            // Actualizar contador
+            if (typeof updateCartCount === 'function') {
+                updateCartCount();
+            }
+        } else {
+            // Mostrar mensaje de error específico
+            if (addResult.code === 'ALREADY_PURCHASED') {
+                // Si ya lo compró, ofrecer ir a la biblioteca
+                if (confirm('Ya has comprado este álbum. ¿Te gustaría verlo en tu biblioteca?')) {
+                    window.location.href = 'biblioteca.html';
+                }
+            } else if (addResult.code === 'ALREADY_IN_CART') {
+                // Si ya está en el carrito
+                const button = e.target;
+                const originalText = button.textContent;
+                button.textContent = '✓ Ya en carrito';
+                button.style.background = '#ff9900';
+                button.style.color = 'white';
+                button.disabled = true;
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                    button.style.color = '';
+                    button.disabled = false;
+                }, 2000);
+            } else {
+                // Otros errores
+                alert('Error: ' + addResult.message);
+            }
+        }
+    } catch (error) {
+        console.error('Error agregando al carrito:', error);
+        alert('Error de conexión al servidor');
+    }
+}
+        
+
+        // Función para mostrar notificaciones
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4CAF50;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 4px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Agregar estilos de animación
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // ==================== FUNCIONES DE CANCIONES ====================
+
+        // Cargar canciones desde la API
+        function loadSongs() {
+            if (!currentAlbum || !currentAlbum.id) {
+                console.error('No hay ID de álbum para cargar canciones');
+                return;
+            }
+
+            const songsList = document.getElementById('songsList');
+            songsList.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Cargando canciones...</p>';
+            
+            console.log(`Cargando canciones para álbum ID: ${currentAlbum.id}`);
+            
+            fetch(`api.php?action=getCancionesByAlbum&albumId=${currentAlbum.id}`)
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return res.json();
+                })
+                .then(data => {
+                    console.log('Respuesta de canciones:', data);
+                    
+                    if (!data.success) {
+                        songsList.innerHTML = `
+                            <p style="color: #8b0000; text-align: center; padding: 20px;">
+                                ${data.message || 'Error al cargar canciones'}
+                            </p>
+                        `;
+                        return;
+                    }
+                    
+                    if (!data.canciones || data.canciones.length === 0) {
+                        songsList.innerHTML = `
+                            <p style="color: #666; text-align: center; padding: 20px;">
+                                ${data.message || 'Este álbum no tiene canciones disponibles'}
+                            </p>
+                        `;
+                        return;
+                    }
+                    
+                    albumSongs = data.canciones;
+                    displaySongs(albumSongs);
+                })
+                .catch(error => {
+                    console.error('Error al cargar canciones:', error);
+                    songsList.innerHTML = `
+                        <p style="color: #8b0000; text-align: center; padding: 20px;">
+                            Error de conexión al cargar canciones. Intenta recargar la página.
+                        </p>
+                    `;
+                });
+        }
+        
+        // Mostrar canciones en la tabla
+        function displaySongs(canciones) {
+    const songsList = document.getElementById('songsList');
+
+    let songsHTML = `
+        <table class="songs-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Título</th>
+                    <th>Duración</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    canciones.forEach((cancion, index) => {
+        let duracionFormateada = cancion.duracion || '--:--';
+
+        if (!isNaN(duracionFormateada) && duracionFormateada.toString().indexOf(':') === -1) {
+            const minutos = Math.floor(duracionFormateada / 60);
+            const segundos = duracionFormateada % 60;
+            duracionFormateada = `${minutos}:${segundos.toString().padStart(2, '0')}`;
+        }
+
+        songsHTML += `
+            <tr class="song-item">
+                <td class="song-number">${index + 1}</td>
+                <td class="song-title">${cancion.titulo || `Canción ${index + 1}`}</td>
+                <td class="song-duration">${duracionFormateada}</td>
+            </tr>
+        `;
+    });
+
+    songsHTML += `
+            </tbody>
+        </table>
+    `;
+
+    songsList.innerHTML = songsHTML;
+}
+
+        // ==================== SISTEMA DE CALIFICACIÓN ====================
+
+        // Configurar sistema de calificación
+        function setupRatingSystem() {
+            console.log('Configurando sistema de calificación...');
+            
+            const stars = document.querySelectorAll('.star');
+            const submitBtn = document.getElementById('submitRatingBtn');
+            
+            // Eventos para estrellas
+            stars.forEach(star => {
+                star.addEventListener('mouseover', function() {
+                    if (userRating === 0) {
+                        const rating = parseInt(this.getAttribute('data-rating'));
+                        highlightStars(rating);
+                    }
+                });
+                
+                star.addEventListener('mouseout', function() {
+                    if (userRating === 0) {
+                        resetStars();
+                    } else {
+                        highlightStars(userRating);
+                    }
+                });
+                
+                star.addEventListener('click', function() {
+                    userRating = parseInt(this.getAttribute('data-rating'));
+                    highlightStars(userRating);
+                    document.getElementById('currentRating').textContent = userRating.toFixed(1);
+                    console.log('Calificación seleccionada:', userRating);
+                });
+            });
+            
+            // Botón para enviar calificación
+            submitBtn.addEventListener('click', submitRatingToDB);
+        }
+
+        // Resaltar estrellas
+        function highlightStars(rating) {
+            const stars = document.querySelectorAll('.star');
+            
+            stars.forEach(star => {
+                const starRating = parseInt(star.getAttribute('data-rating'));
+                
+                if (starRating <= rating) {
+                    star.style.color = '#ffd700';
+                    star.style.textShadow = '0 0 10px rgba(255, 215, 0, 0.7)';
+                } else {
+                    star.style.color = '#ccc';
+                    star.style.textShadow = 'none';
+                }
+            });
+        }
+
+        // Resetear estrellas
+        function resetStars() {
+            const stars = document.querySelectorAll('.star');
+            stars.forEach(star => {
+                star.style.color = '#ccc';
+                star.style.textShadow = 'none';
+            });
+        }
+
+        // Cargar calificación desde la base de datos
+        async function loadRatingFromDB() {
+            if (!currentUserId || !currentAlbum || !currentAlbum.id) {
+                console.log('No se puede cargar calificación: falta usuario o álbum');
+                return;
+            }
+
+            try {
+                console.log(`Cargando calificación para usuario ${currentUserId}, álbum ${currentAlbum.id}`);
+                
+                const response = await fetch(`api.php?action=getRating&userId=${currentUserId}&albumId=${currentAlbum.id}`);
+                const data = await response.json();
+                console.log('Respuesta de calificación:', data);
+                
+                if (data.success && data.calificacion > 0) {
+                    userRating = parseInt(data.calificacion);
+                    console.log('Calificación cargada:', userRating);
+                    
+                    highlightStars(userRating);
+                    document.getElementById('currentRating').textContent = userRating.toFixed(1);
+                } else {
+                    userRating = 0;
+                    console.log('No hay calificación guardada');
+                }
+                
+                await loadRatingStats();
+                
+            } catch (error) {
+                console.error('Error cargando calificación:', error);
+                userRating = 0;
+            }
+        }
+
+        // Cargar estadísticas de calificaciones
+        async function loadRatingStats() {
+            if (!currentAlbum || !currentAlbum.id) return;
+
+            try {
+                const response = await fetch(`api.php?action=getRatingStats&albumId=${currentAlbum.id}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('ratingCount').textContent = `(${data.count || 0} calificaciones)`;
+                }
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+            }
+        }
+
+        // Enviar calificación a la base de datos
+        async function submitRatingToDB() {
+            if (userRating === 0) {
+                alert('Por favor selecciona una calificación');
+                return;
+            }
+
+            if (!currentUserId) {
+                alert('Debes iniciar sesión para calificar');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const albumId = currentAlbum.id;
+
+            try {
+                console.log(`Enviando calificación: usuario ${currentUserId}, álbum ${albumId}, rating ${userRating}`);
+                
+                const response = await fetch('api.php?action=saveRating', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUserId,
+                        albumId: albumId,
+                        rating: userRating
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`¡Gracias por calificar con ${userRating} estrellas!`);
+                    await loadRatingStats();
+                } else {
+                    alert('Error al guardar la calificación: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error enviando calificación:', error);
+                alert('Error de conexión al servidor');
+            }
+        }
+
+        // ==================== FAVORITOS ====================
+
+        // Verificar si el álbum está en favoritos
+        async function checkFavoriteStatus() {
+            if (!currentUserId || !currentAlbum || !currentAlbum.id) return;
+
+            try {
+                const response = await fetch(`api.php?action=checkFavorite&userId=${currentUserId}&albumId=${currentAlbum.id}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    isFavorite = data.isFavorite;
+                    updateFavoriteButton();
+                }
+            } catch (error) {
+                console.error('Error verificando favorito:', error);
+            }
+        }
+
+        // Actualizar botón de favoritos
+        function updateFavoriteButton() {
+            const favoriteBtn = document.getElementById('favoriteBtn');
+            if (!favoriteBtn) return;
+            
+            if (isFavorite) {
+                favoriteBtn.textContent = '❤️ Eliminar de Favoritos';
+                favoriteBtn.style.backgroundColor = '#ff0000';
+                favoriteBtn.style.color = 'white';
+                favoriteBtn.style.borderColor = '#8b0000';
+            } else {
+                favoriteBtn.textContent = '❤️ Agregar a Favoritos';
+                favoriteBtn.style.backgroundColor = '';
+                favoriteBtn.style.color = '';
+                favoriteBtn.style.borderColor = '';
+            }
+        }
+
+        // Alternar favorito
+        async function toggleFavorite() {
+            if (!currentUserId) {
+                alert('Debes iniciar sesión para agregar a favoritos');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const albumId = currentAlbum.id;
+
+            try {
+                const response = await fetch('api.php?action=toggleFavorite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUserId,
+                        albumId: albumId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    isFavorite = result.isFavorite;
+                    updateFavoriteButton();
+                    alert(result.message);
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error con favoritos:', error);
+                alert('Error de conexión al servidor');
+            }
+        }
+
+        // ==================== FUNCIONES AUXILIARES ====================
+
+        // Configurar botones
+        function setupButtons() {
+            const favoriteBtn = document.getElementById('favoriteBtn');
+            const buyAlbumBtn = document.getElementById('buyAlbumBtn');
+            const logoutBtn = document.getElementById('logoutBtnDropdown');
+            
+            if (favoriteBtn) {
+                favoriteBtn.addEventListener('click', toggleFavorite);
+            }
+            
+            if (buyAlbumBtn) {
+                buyAlbumBtn.addEventListener('click', function(e) {
+                    const albumId = currentAlbum.id;
+                    const albumName = currentAlbum.titulo;
+                    const albumPrice = currentAlbum.precio ? parseFloat(currentAlbum.precio) : 600;
+                    
+                    // Llama a la función que SÍ existe
+addToCartFromCanciones(albumId, albumName, albumPrice, e);
+                });
+            }
+            
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    localStorage.removeItem("userEmail");
+                    localStorage.removeItem("userName");
+                    localStorage.removeItem("userId");
+                    localStorage.removeItem("userRole");
+                    alert("Sesión cerrada correctamente");
+                    window.location.href = "index.html";
+                });
+            }
+        }
+
+        // Mostrar mensaje de error
+        function showErrorMessage(message) {
+            const container = document.querySelector('.album-details-container');
+            if (!container) return;
+            
+            container.innerHTML = `
+                <div class="error-message">
+                    <h2>Error</h2>
+                    <p>${message}</p>
+                    <button onclick="goBack()" class="back-btn">← Volver</button>
+                </div>
+            `;
+        }
+
+        // Mostrar información del usuario
+        function displayUserInfo() {
+            const userNameDisplay = document.getElementById('userNameDisplay');
+            const userEmailDisplay = document.getElementById('userEmailDisplay');
+            
+            if (userNameDisplay && userEmailDisplay) {
+                userNameDisplay.textContent = localStorage.getItem('userName') || 'Usuario';
+                userEmailDisplay.textContent = localStorage.getItem('userEmail') || 'No logueado';
+            }
+        }
+
+        // ==================== INICIALIZACIÓN ====================
+
+        // Inicializar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Página canciones.html cargada');
+            
+            // Mostrar información del usuario
+            displayUserInfo();
+            
+            // Cargar datos del álbum
+            loadAlbumData();
+        });
+
+    </script>
+
+    <!-- Script principal -->
+    <script src="main.js"></script>
+    
+    <!-- Estilos específicos para canciones.html -->
+    <style>
+        /* Botón de volver */
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #ff0000;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: #ff0303;
+            color: white;
+            text-decoration: none;
+        }
+        
+        /* Contenedor principal */
+        .album-details-container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgb(255, 0, 0);
+            margin-top: 20px;
+        }
+        
+        /* Encabezado del álbum */
+        .album-header {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .album-cover {
+            flex: 0 0 300px;
+        }
+        
+        .album-cover img {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgb(255, 0, 0);
+        }
+        
+        .album-info {
+            flex: 1;
+        }
+        
+        .album-info h1 {
+            margin: 0 0 10px 0;
+            color: #f60707;
+            font-size: 32px;
+        }
+        
+        .album-meta {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .album-meta .meta-item {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #ff0000;
+            border: 1px solid #ddd;
+        }
+        
+        .album-description {
+            line-height: 1.6;
+            color: #f70202;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        
+        .album-price {
+            font-size: 28px;
+            color: #ff0707;
+            margin: 25px 0;
+        }
+        
+        .album-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        /* Botones */
+        .buy-btn, .favorite-btn, .submit-rating-btn, .buy-song-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .buy-btn {
+            background: #f30101;
+            color: white;
+        }
+        
+        .buy-btn:hover {
+            background: #ff0303;
+        }
+        
+        .favorite-btn {
+            background: white;
+            border: 1px solid #ddd;
+            color: #ff0000;
+        }
+        
+        .favorite-btn:hover {
+            background: #f80101;
+            border-color: #ff0404;
+        }
+        
+        /* Sección de calificación */
+        .rating-section {
+            margin: 40px 0;
+            padding: 25px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .rating-section h3 {
+            margin-top: 0;
+            color: #f70505;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .rating-stars {
+            font-size: 36px;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        
+        .rating-stars .star {
+            color: #ccc;
+            transition: color 0.2s;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        
+        .rating-stars .star:hover {
+            color: #ffd700;
+        }
+        
+        .rating-display {
+            font-size: 20px;
+            margin: 15px 0 25px 0;
+            color: #ff0000;
+        }
+        
+        .rating-display #currentRating {
+            color: #ff0000;
+            font-size: 24px;
+        }
+        
+        .submit-rating-btn {
+            background: #ff0000;
+            color: white;
+        }
+        
+        .submit-rating-btn:hover {
+            background: #ff0000;
+        }
+        
+        /* Sección de canciones */
+        .songs-section {
+            margin-top: 50px;
+        }
+        
+        .songs-section h3 {
+            margin-bottom: 25px;
+            color: #222;
+            font-size: 24px;
+            border-bottom: 2px solid #ff0000;
+            padding-bottom: 10px;
+        }
+        
+        /* Tabla de canciones */
+        .songs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgb(255, 0, 0);
+        }
+        
+        .songs-table thead {
+            background: #f5f5f5;
+        }
+        
+        .songs-table th {
+            text-align: left;
+            padding: 15px;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 2px solid #8b0000;
+        }
+        
+        .song-item {
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+        
+        .song-item:hover {
+            background: #f9f9f9;
+        }
+        
+        .song-item td {
+            padding: 12px 15px;
+        }
+        
+        .song-number {
+            width: 60px;
+            text-align: center;
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .song-title {
+            font-weight: 500;
+            font-size: 16px;
+            color: #222;
+        }
+        
+        .song-duration {
+            width: 100px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .song-price {
+            width: 120px;
+            text-align: center;
+            color: #ff0000;
+            font-weight: bold;
+        }
+        
+        .song-actions {
+            width: 150px;
+            text-align: center;
+        }
+        
+        .buy-song-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .buy-song-btn:hover {
+            background: #45a049;
+        }
+        
+        /* Botón de compra cuando está deshabilitado */
+        .buy-song-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        /* Mensajes de error */
+        .error-message {
+            color: #8b0000;
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .error-message h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        
+        .error-message p {
+            font-size: 18px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .album-header {
+                flex-direction: column;
+            }
+            
+            .album-cover {
+                flex: none;
+                max-width: 250px;
+                margin: 0 auto 20px;
+            }
+            
+            .album-actions {
+                flex-direction: column;
+            }
+            
+            .songs-table {
+                font-size: 14px;
+            }
+            
+            .songs-table th,
+            .songs-table td {
+                padding: 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .album-cover {
+                max-width: 200px;
+            }
+            
+            .album-meta {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .songs-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</body>
+</html>

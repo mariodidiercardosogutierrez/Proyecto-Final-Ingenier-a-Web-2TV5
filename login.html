@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Iniciar Sesión</title>
+    <title>Iniciar Sesión - Music Store</title>
     <link rel="stylesheet" href="style.css" />
 </head>
-<body style="display:flex; justify-content:center; align-items:center; min-height:100vh;">
+<body style="display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; background:#b30000;">
     <div class="login-card">
         <h2>Iniciar Sesión</h2>
         <form id="loginForm">
@@ -21,14 +21,106 @@
             <button type="submit" class="btn">Entrar</button>
         </form>
 
-        <!-- Texto de olvido de contraseña en el mismo formato que Registrate -->
         <p class="register-text">
-            <a href="forgot.html" class="register-link">Olvidé mi contraseña</a>
+            <a href="cperdida.html" class="register-link">Olvidé mi contraseña</a>
         </p>
 
         <p class="register-text">
             ¿No tienes cuenta? <a href="register.html" class="register-link">Regístrate</a>
         </p>
     </div>
+
+    <script src="main.js"></script>
+    <!-- login.html - Agregar este script antes del cierre de body -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('loginForm');
+    
+    // Reemplaza todo el bloque del evento submit con esto:
+loginForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    
+    if (!email || !password) {
+        alert('Por favor, complete todos los campos');
+        return;
+    }
+    
+    const submitBtn = loginForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Verificando...';
+    
+    try {
+        const response = await fetch('api.php?action=login&t=' + Date.now(), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        });
+        
+        const result = await response.json();
+        console.log('Respuesta del servidor:', result);
+        
+        if (result.success && result.user) {
+            // Limpiar localStorage previo
+            localStorage.clear();
+            
+            // Normalizar el rol
+            const userRole = String(result.user.role).trim().toLowerCase();
+            
+            // Guardar en localStorage
+            localStorage.setItem('userId', result.user.id);
+            localStorage.setItem('userEmail', result.user.email);
+            localStorage.setItem('userRole', userRole);
+            localStorage.setItem('userName', result.user.nombre);
+            localStorage.setItem('userLastName', result.user.apellido);
+            localStorage.setItem('lastLogin', Date.now());
+            
+            // Forzar escritura en storage
+            window.dispatchEvent(new Event('storage'));
+            
+            // Redirección inmediata
+            setTimeout(() => {
+                if (userRole === 'admin') {
+                    window.location.replace('a_index.html?t=' + Date.now());
+                } else {
+                    window.location.replace('index.html?t=' + Date.now());
+                }
+            }, 100);
+            
+        } else {
+            alert(result.message || 'Error en las credenciales');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión. Intente nuevamente.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+});
+    // Verificar si ya está logueado
+    const userEmail = localStorage.getItem('userEmail');
+    const userRole = localStorage.getItem('userRole');
+    
+    if (userEmail && userRole) {
+        // Si ya está logueado, redirigir según rol
+        if (userRole === 'admin') {
+            window.location.href = 'a_index.html';
+        } else {
+            window.location.href = 'index.html';
+        }
+    }
+});
+</script>
 </body>
 </html>
