@@ -121,7 +121,29 @@ CREATE TABLE AlbumFavorito (
     FOREIGN KEY (id_album) REFERENCES Album(id_album)
 ) ENGINE=InnoDB;
 
+CREATE TABLE Usuario_Tarjeta (
+    id_usuario_tarjeta INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_tarjeta INT NOT NULL,
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (id_usuario, id_tarjeta),
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_tarjeta) REFERENCES Tarjeta(id_tarjeta)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
 
+CREATE TABLE CompraAlbum (
+    id_compra_album INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_album INT NOT NULL,
+    id_tarjeta INT NOT NULL,
+    fecha_compra DATETIME DEFAULT CURRENT_TIMESTAMP,
+    precio FLOAT NOT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id),
+    FOREIGN KEY (id_album) REFERENCES Album(id_album),
+    FOREIGN KEY (id_tarjeta) REFERENCES Tarjeta(id_tarjeta)
+) ENGINE=InnoDB;
 
 INSERT INTO Artista (nombre_artista, correo, contrasenia) VALUES
 ('Bad Bunny', 'badbunny@gmail.com', '123'),
@@ -246,5 +268,9 @@ INSERT INTO Estatus_Compra (estatus) VALUES
 
 INSERT INTO Tarjeta (nombre_titular, numero_tarjeta, mes_exp, anio_exp, cvv) VALUES
 ('Mauricio Ramos', '4111111111111111', '08', '2029', '123');
+
+ALTER TABLE CarritoItem 
+ADD COLUMN fecha_agregado TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ADD INDEX idx_carrito (id_carrito);
 
 
