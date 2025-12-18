@@ -25,6 +25,17 @@ $action = $_GET['action'] ?? '';
 if ($action === "login") {
     login($conn);
 }
+else if ($action === "register") {
+    registerUser($conn);
+}
+
+else if ($action === "createAlbumWithSongs") {
+    createAlbumWithSongs($conn);
+}
+else if ($action === "updateAlbumWithSongs") {
+    updateAlbumWithSongs($conn);
+}
+
 else if ($action === "getUsersStats") {
     getUsersStats($conn);
 }
@@ -129,6 +140,33 @@ else if ($action === "test") {
         "timestamp" => date('Y-m-d H:i:s')
     ]);
 }
+
+// =======================
+//  FUNCIONES PARA CRUD DE ÁLBUMES
+// =======================
+
+// CREAR ÁLBUM
+else if ($action === "createAlbum") {
+    createAlbum($conn);
+}
+// ACTUALIZAR ÁLBUM
+else if ($action === "updateAlbum") {
+    updateAlbum($conn);
+}
+// ELIMINAR ÁLBUM
+else if ($action === "deleteAlbum") {
+    deleteAlbum($conn);
+}
+// CREAR ARTISTA
+else if ($action === "createArtist") {
+    createArtist($conn);
+}
+// ACTUALIZAR ARTISTA
+else if ($action === "updateArtist") {
+    updateArtist($conn);
+}
+
+
 // ========================
 //  OBTENER COMPRAS DEL USUARIO
 // ========================
@@ -184,6 +222,129 @@ else {
 }
 
 $conn->close();
+
+function registerUser($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!$data) {
+        echo json_encode(["success" => false, "message" => "No se recibieron datos"]);
+        return;
+    }
+
+    $required = ['nombre', 'apellido', 'email', 'telefono', 'fecha_nac', 'password'];
+    foreach ($required as $field) {
+        if (empty($data[$field])) {
+            echo json_encode(["success" => false, "message" => "Campo $field requerido"]);
+            return;
+        }
+    }
+
+    $nombre = trim($data['nombre']);
+    $apellido = trim($data['apellido']);
+    $email = trim($data['email']);
+    $telefono = trim($data['telefono']);
+    $fecha_nac = $data['fecha_nac'];
+    $password = $data['password']; // Contraseña en texto plano
+
+    // Validación de email
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo json_encode(["success" => false, "message" => "Email inválido"]);
+        return;
+    }
+
+    // Validación de teléfono (10 dígitos)
+    if (!preg_match('/^\d{10}$/', $telefono)) {
+        echo json_encode(["success" => false, "message" => "Teléfono debe tener 10 dígitos"]);
+        return;
+    }
+
+    // Validación de edad (mayor de 18 años)
+    $birthDate = new DateTime($fecha_nac);
+    $today = new DateTime();
+    $age = $today->diff($birthDate)->y;
+    
+    if ($age < 18) {
+        echo json_encode(["success" => false, "message" => "Debes tener al menos 18 años"]);
+        return;
+    }
+
+    if ($age > 100) {
+        echo json_encode(["success" => false, "message" => "Edad máxima permitida: 100 años"]);
+        return;
+    }
+
+    // Validación de contraseña
+    if (strlen($password) < 9) {
+        echo json_encode(["success" => false, "message" => "La contraseña debe tener al menos 9 caracteres"]);
+        return;
+    }
+
+    // Verificar si email ya existe
+    $check = $conn->prepare("SELECT id FROM usuarios WHERE email = ?");
+    $check->bind_param("s", $email);
+    $check->execute();
+    $check->store_result();
+
+    if ($check->num_rows > 0) {
+        echo json_encode(["success" => false, "message" => "El email ya está registrado"]);
+        return;
+    }
+
+    // Verificar si teléfono ya existe
+    $checkPhone = $conn->prepare("SELECT id FROM usuarios WHERE telefono = ?");
+    $checkPhone->bind_param("s", $telefono);
+    $checkPhone->execute();
+    $checkPhone->store_result();
+
+    if ($checkPhone->num_rows > 0) {
+        echo json_encode(["success" => false, "message" => "El teléfono ya está registrado"]);
+        return;
+    }
+
+    // Insertar usuario (SIN HASH porque tu login compara contraseñas en texto plano)
+    $stmt = $conn->prepare(
+        "INSERT INTO usuarios (nombre, apellido, email, telefono, fecha_nac, password, role)
+         VALUES (?, ?, ?, ?, ?, ?, 'user')"
+    );
+
+    $stmt->bind_param(
+        "ssssss",
+        $nombre,
+        $apellido,
+        $email,
+        $telefono,
+        $fecha_nac,
+        $password // Texto plano, NO hasheado
+    );
+
+    if ($stmt->execute()) {
+        $userId = $stmt->insert_id;
+        
+        // Crear carrito para el nuevo usuario
+        $cartStmt = $conn->prepare("INSERT INTO Carrito (id_usuario) VALUES (?)");
+        $cartStmt->bind_param("i", $userId);
+        $cartStmt->execute();
+        
+        echo json_encode([
+            "success" => true,
+            "message" => "Usuario registrado exitosamente",
+            "userId" => $userId,
+            "user" => [
+                "id" => $userId,
+                "nombre" => $nombre,
+                "apellido" => $apellido,
+                "email" => $email,
+                "role" => "user",
+                "telefono" => $telefono
+            ]
+        ]);
+    } else {
+        echo json_encode([
+            "success" => false,
+            "message" => "Error al registrar usuario: " . $conn->error
+        ]);
+    }
+}
 
 // =======================
 //     FUNCIÓN LOGIN
@@ -2383,45 +2544,45 @@ function getUserById($conn) {
 // =======================
 function createUser($conn) {
     $data = json_decode(file_get_contents("php://input"), true);
-    
-    $required = ['nombre', 'apellido', 'email', 'password', 'role'];
+
+    $required = ['nombre', 'apellido', 'email', 'telefono', 'fecha_nac', 'password'];
     foreach ($required as $field) {
-        if (!isset($data[$field]) || empty($data[$field])) {
+        if (empty($data[$field])) {
             echo json_encode(["success" => false, "message" => "Campo $field requerido"]);
             return;
         }
     }
-    
-    // Validar email único
+
     $email = $conn->real_escape_string($data['email']);
-    $checkSql = "SELECT id FROM usuarios WHERE email = '$email'";
-    $checkResult = $conn->query($checkSql);
-    
-    if ($checkResult && $checkResult->num_rows > 0) {
+    $check = $conn->query("SELECT id FROM usuarios WHERE email = '$email'");
+    if ($check->num_rows > 0) {
         echo json_encode(["success" => false, "message" => "El email ya está registrado"]);
         return;
     }
-    
-    // Preparar datos
+
     $nombre = $conn->real_escape_string($data['nombre']);
     $apellido = $conn->real_escape_string($data['apellido']);
+    $telefono = $conn->real_escape_string($data['telefono']);
+    $fecha_nac = $conn->real_escape_string($data['fecha_nac']);
+
+    // ⚠️ tu login NO usa hash, así que NO lo hasheamos aquí
     $password = $conn->real_escape_string($data['password']);
-    $role = $conn->real_escape_string($data['role']);
-    $telefono = isset($data['telefono']) ? $conn->real_escape_string($data['telefono']) : '';
-    $fecha_nac = isset($data['fecha_nac']) ? $conn->real_escape_string($data['fecha_nac']) : null;
-    
-    $sql = "INSERT INTO usuarios (nombre, apellido, email, telefono, fecha_nac, password, role) 
-            VALUES ('$nombre', '$apellido', '$email', '$telefono', " .
-            ($fecha_nac ? "'$fecha_nac'" : "NULL") . ", '$password', '$role')";
-    
+
+    $role = 'user';
+
+    $sql = "INSERT INTO usuarios
+            (nombre, apellido, email, telefono, fecha_nac, password, role)
+            VALUES
+            ('$nombre', '$apellido', '$email', '$telefono', '$fecha_nac', '$password', '$role')";
+
     if ($conn->query($sql)) {
         echo json_encode([
             "success" => true,
-            "message" => "Usuario creado exitosamente",
+            "message" => "Usuario registrado correctamente",
             "userId" => $conn->insert_id
         ]);
     } else {
-        echo json_encode(["success" => false, "message" => "Error al crear usuario: " . $conn->error]);
+        echo json_encode(["success" => false, "message" => $conn->error]);
     }
 }
 
@@ -2478,14 +2639,62 @@ function deleteUser($conn) {
     
     $userId = intval($data['userId']);
     
-    // Verificar que no sea el último admin
-    $checkAdminSql = "SELECT COUNT(*) as admin_count FROM usuarios WHERE role = 'admin'";
-    $result = $conn->query($checkAdminSql);
-    $row = $result->fetch_assoc();
+    // 1. Primero verificar si el usuario a eliminar es admin
+    $checkUserSql = "SELECT role FROM usuarios WHERE id = $userId LIMIT 1";
+    $userResult = $conn->query($checkUserSql);
     
-    if ($row['admin_count'] <= 1) {
-        echo json_encode(["success" => false, "message" => "No se puede eliminar el único administrador"]);
+    if (!$userResult || $userResult->num_rows === 0) {
+        echo json_encode(["success" => false, "message" => "Usuario no encontrado"]);
         return;
+    }
+    
+    $user = $userResult->fetch_assoc();
+    $isAdmin = ($user['role'] === 'admin');
+    
+    // 2. Si es admin, verificar cuántos admins hay en total
+    if ($isAdmin) {
+        $checkAdminSql = "SELECT COUNT(*) as admin_count FROM usuarios WHERE role = 'admin'";
+        $result = $conn->query($checkAdminSql);
+        $row = $result->fetch_assoc();
+        
+        // Si solo hay 1 admin, no permitir eliminar
+        if ($row['admin_count'] <= 1) {
+            echo json_encode([
+                "success" => false, 
+                "message" => "No se puede eliminar el único administrador del sistema"
+            ]);
+            return;
+        }
+    }
+    
+    // 3. Verificar restricciones de claves foráneas
+    // Primero, eliminar dependencias
+    
+    // Eliminar favoritos del usuario
+    $deleteFavorites = "DELETE FROM AlbumFavorito WHERE id_usuario = $userId";
+    $conn->query($deleteFavorites);
+    
+    // Eliminar calificaciones del usuario
+    $deleteRatings = "DELETE FROM AlbumCalificacion WHERE id_usuario = $userId";
+    $conn->query($deleteRatings);
+    
+    // Eliminar tarjetas asociadas al usuario
+    $deleteCards = "DELETE FROM Usuario_Tarjeta WHERE id_usuario = $userId";
+    $conn->query($deleteCards);
+    
+    // Eliminar items del carrito del usuario
+    $getCartId = "SELECT id_carrito FROM Carrito WHERE id_usuario = $userId";
+    $cartResult = $conn->query($getCartId);
+    
+    if ($cartResult && $cartResult->num_rows > 0) {
+        $cart = $cartResult->fetch_assoc();
+        $cartId = $cart['id_carrito'];
+        
+        $deleteCartItems = "DELETE FROM CarritoItem WHERE id_carrito = $cartId";
+        $conn->query($deleteCartItems);
+        
+        $deleteCart = "DELETE FROM Carrito WHERE id_usuario = $userId";
+        $conn->query($deleteCart);
     }
     
     // Eliminar usuario
@@ -2494,13 +2703,24 @@ function deleteUser($conn) {
     if ($conn->query($sql)) {
         echo json_encode([
             "success" => true,
-            "message" => "Usuario eliminado exitosamente"
+            "message" => "Usuario eliminado exitosamente",
+            "wasAdmin" => $isAdmin
         ]);
     } else {
-        echo json_encode(["success" => false, "message" => "Error al eliminar usuario: " . $conn->error]);
+        // Si hay error por claves foráneas, intentar una eliminación más completa
+        if ($conn->errno == 1451) { // Error de clave foránea
+            echo json_encode([
+                "success" => false, 
+                "message" => "No se puede eliminar el usuario porque tiene compras registradas. Contacte al administrador."
+            ]);
+        } else {
+            echo json_encode([
+                "success" => false, 
+                "message" => "Error al eliminar usuario: " . $conn->error
+            ]);
+        }
     }
 }
-
 // =======================
 //  OBTENER TODAS LAS COMPRAS
 // =======================
@@ -2839,18 +3059,364 @@ function getPurchaseStats($conn) {
 
 
 
+function createAlbum($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!$data) {
+        echo json_encode(["success" => false, "message" => "No se recibieron datos"]);
+        return;
+    }
+    
+    $required = ['titulo', 'id_artista', 'anio', 'genero_album', 'precio', 'cantidadtemas', 'duracion_total', 'descripcion_album'];
+    foreach ($required as $field) {
+        if (!isset($data[$field]) || empty($data[$field])) {
+            echo json_encode(["success" => false, "message" => "Campo $field requerido"]);
+            return;
+        }
+    }
+    
+    $titulo = $conn->real_escape_string($data['titulo']);
+    $id_artista = intval($data['id_artista']);
+    $anio = intval($data['anio']);
+    $genero_album = $conn->real_escape_string($data['genero_album']);
+    $precio = floatval($data['precio']);
+    $cantidadtemas = intval($data['cantidadtemas']);
+    $duracion_total = intval($data['duracion_total']);
+    $descripcion_album = $conn->real_escape_string($data['descripcion_album']);
+    
+    $sql = "INSERT INTO Album (titulo, id_artista, anio, genero_album, precio, cantidadtemas, duracion_total, descripcion_album) 
+            VALUES ('$titulo', $id_artista, $anio, '$genero_album', $precio, $cantidadtemas, $duracion_total, '$descripcion_album')";
+    
+    if ($conn->query($sql)) {
+        echo json_encode([
+            "success" => true,
+            "message" => "Álbum creado exitosamente",
+            "albumId" => $conn->insert_id
+        ]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Error al crear álbum: " . $conn->error]);
+    }
+}
 
+function updateAlbum($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!$data || !isset($data['id_album'])) {
+        echo json_encode(["success" => false, "message" => "Datos incompletos"]);
+        return;
+    }
+    
+    $albumId = intval($data['id_album']);
+    $updates = [];
+    
+    // Construir consulta dinámica
+    $fields = [
+        'titulo' => 'string',
+        'id_artista' => 'int',
+        'anio' => 'int',
+        'genero_album' => 'string',
+        'precio' => 'float',
+        'cantidadtemas' => 'int',
+        'duracion_total' => 'int',
+        'descripcion_album' => 'string'
+    ];
+    
+    foreach ($fields as $field => $type) {
+        if (isset($data[$field])) {
+            if ($type === 'string') {
+                $value = "'" . $conn->real_escape_string($data[$field]) . "'";
+            } else {
+                $value = $type === 'int' ? intval($data[$field]) : floatval($data[$field]);
+            }
+            $updates[] = "$field = $value";
+        }
+    }
+    
+    if (empty($updates)) {
+        echo json_encode(["success" => false, "message" => "No hay datos para actualizar"]);
+        return;
+    }
+    
+    $sql = "UPDATE Album SET " . implode(', ', $updates) . " WHERE id_album = $albumId";
+    
+    if ($conn->query($sql)) {
+        echo json_encode([
+            "success" => true,
+            "message" => "Álbum actualizado exitosamente"
+        ]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Error al actualizar álbum: " . $conn->error]);
+    }
+}
 
+function deleteAlbum($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!$data || !isset($data['albumId'])) {
+        echo json_encode(["success" => false, "message" => "ID de álbum requerido"]);
+        return;
+    }
+    
+    $albumId = intval($data['albumId']);
+    
+    // Primero eliminar canciones asociadas (si existen)
+    $deleteSongs = "DELETE FROM Cancion WHERE id_album = $albumId";
+    $conn->query($deleteSongs);
+    
+    // Eliminar álbum
+    $sql = "DELETE FROM Album WHERE id_album = $albumId";
+    
+    if ($conn->query($sql)) {
+        echo json_encode([
+            "success" => true,
+            "message" => "Álbum eliminado exitosamente"
+        ]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Error al eliminar álbum: " . $conn->error]);
+    }
+}
 
+function createArtist($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!$data) {
+        echo json_encode(["success" => false, "message" => "No se recibieron datos"]);
+        return;
+    }
+    
+    $required = ['nombre_artista', 'correo', 'contrasenia'];
+    foreach ($required as $field) {
+        if (!isset($data[$field]) || empty($data[$field])) {
+            echo json_encode(["success" => false, "message" => "Campo $field requerido"]);
+            return;
+        }
+    }
+    
+    $nombre_artista = $conn->real_escape_string($data['nombre_artista']);
+    $correo = $conn->real_escape_string($data['correo']);
+    $contrasenia = $conn->real_escape_string($data['contrasenia']);
+    
+    $sql = "INSERT INTO Artista (nombre_artista, correo, contrasenia) 
+            VALUES ('$nombre_artista', '$correo', '$contrasenia')";
+    
+    if ($conn->query($sql)) {
+        echo json_encode([
+            "success" => true,
+            "message" => "Artista creado exitosamente",
+            "artistId" => $conn->insert_id
+        ]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Error al crear artista: " . $conn->error]);
+    }
+}
 
+function updateArtist($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!$data || !isset($data['id_artista'])) {
+        echo json_encode(["success" => false, "message" => "Datos incompletos"]);
+        return;
+    }
+    
+    $artistId = intval($data['id_artista']);
+    $updates = [];
+    
+    if (isset($data['nombre_artista'])) {
+        $updates[] = "nombre_artista = '" . $conn->real_escape_string($data['nombre_artista']) . "'";
+    }
+    if (isset($data['correo'])) {
+        $updates[] = "correo = '" . $conn->real_escape_string($data['correo']) . "'";
+    }
+    if (isset($data['contrasenia'])) {
+        $updates[] = "contrasenia = '" . $conn->real_escape_string($data['contrasenia']) . "'";
+    }
+    
+    if (empty($updates)) {
+        echo json_encode(["success" => false, "message" => "No hay datos para actualizar"]);
+        return;
+    }
+    
+    $sql = "UPDATE Artista SET " . implode(', ', $updates) . " WHERE id_artista = $artistId";
+    
+    if ($conn->query($sql)) {
+        echo json_encode([
+            "success" => true,
+            "message" => "Artista actualizado exitosamente"
+        ]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Error al actualizar artista: " . $conn->error]);
+    }
+}
 
+function createAlbumWithSongs($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
 
+    if (!$data || empty($data['songs'])) {
+        echo json_encode(["success" => false, "message" => "El álbum debe tener canciones"]);
+        return;
+    }
 
+    $conn->begin_transaction();
 
+    try {
+        // Calcular duración total sumando todas las canciones
+        $duracion_total = 0;
+        foreach ($data['songs'] as $song) {
+            $duracion_total += intval($song['duracion']);
+        }
 
+        $stmt = $conn->prepare("
+            INSERT INTO Album
+            (titulo, anio, id_artista, duracion_total, descripcion_album, genero_album, cantidadtemas, precio)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ");
 
+        $cantidadTemas = count($data['songs']);
 
+        $stmt->bind_param(
+            "siiissid",
+            $data['titulo'],
+            $data['anio'],
+            $data['id_artista'],
+            $duracion_total,
+            $data['descripcion_album'],
+            $data['genero_album'],
+            $cantidadTemas,
+            $data['precio']
+        );
+        $stmt->execute();
 
+        $albumId = $conn->insert_id;
+
+        $songStmt = $conn->prepare("
+            INSERT INTO Cancion
+            (titulo, duracion, anio, fecha_subida, genero, precio, id_artista, id_album)
+            VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)
+        ");
+
+        foreach ($data['songs'] as $song) {
+            $songStmt->bind_param(
+                "siisiii",
+                $song['titulo'],
+                $song['duracion'],
+                $data['anio'],
+                $data['genero_album'],
+                $song['precio'],
+                $data['id_artista'],
+                $albumId
+            );
+            if (!$songStmt->execute()) {
+                throw new Exception("Error al insertar canción: " . $songStmt->error);
+            }
+        }
+
+        $conn->commit();
+
+        echo json_encode([
+            "success" => true,
+            "message" => "Álbum creado exitosamente",
+            "albumId" => $albumId
+        ]);
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    }
+}
+function updateAlbumWithSongs($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!$data || empty($data['id_album'])) {
+        echo json_encode(["success" => false, "message" => "ID de álbum requerido"]);
+        return;
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        $cantidadTemas = count($data['songs']);
+
+        $stmt = $conn->prepare("
+            UPDATE Album SET
+                titulo = ?,
+                anio = ?,
+                id_artista = ?,
+                descripcion_album = ?,
+                genero_album = ?,
+                cantidadtemas = ?,
+                precio = ?
+            WHERE id_album = ?
+        ");
+
+        $stmt->bind_param(
+            "siissidi",
+            $data['titulo'],
+            $data['anio'],
+            $data['id_artista'],
+            $data['descripcion_album'],
+            $data['genero_album'],
+            $cantidadTemas,
+            $data['precio'],
+            $data['id_album']
+        );
+        $stmt->execute();
+
+        // Eliminar canciones marcadas para eliminar
+        if (!empty($data['songsToDelete'])) {
+            $deleteIds = implode(',', array_map('intval', $data['songsToDelete']));
+            $conn->query("DELETE FROM Cancion WHERE id_cancion IN ($deleteIds)");
+        }
+
+        // Actualizar o insertar canciones
+        foreach ($data['songs'] as $song) {
+            if (!empty($song['id_cancion'])) {
+                // Actualizar canción existente
+                $updateStmt = $conn->prepare("
+                    UPDATE Cancion SET
+                        titulo = ?,
+                        duracion = ?,
+                        precio = ?
+                    WHERE id_cancion = ?
+                ");
+                $updateStmt->bind_param(
+                    "siii",
+                    $song['titulo'],
+                    $song['duracion'],
+                    $song['precio'],
+                    $song['id_cancion']
+                );
+                $updateStmt->execute();
+            } else {
+                // Insertar nueva canción
+                $insertStmt = $conn->prepare("
+                    INSERT INTO Cancion
+                    (titulo, duracion, anio, fecha_subida, genero, precio, id_artista, id_album)
+                    VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)
+                ");
+                
+                $insertStmt->bind_param(
+                    "ssisiii",
+                    $song['titulo'],
+                    $song['duracion'],
+                    $data['anio'],
+                    $data['genero_album'],
+                    $song['precio'],
+                    $data['id_artista'],
+                    $data['id_album']
+                );
+                $insertStmt->execute();
+            }
+        }
+
+        $conn->commit();
+
+        echo json_encode(["success" => true, "message" => "Álbum y canciones actualizados"]);
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    }
+}
 
 
 

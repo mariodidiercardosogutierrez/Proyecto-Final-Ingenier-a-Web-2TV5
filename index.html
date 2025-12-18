@@ -88,16 +88,17 @@ document.addEventListener("DOMContentLoaded", function () {
     // Verificar si el usuario está logueado
     const userId = localStorage.getItem('userId');
     const userEmail = localStorage.getItem('userEmail');
+    const userRole = localStorage.getItem('userRole');
     
     console.log('Verificando login...');
-    console.log('UserID en localStorage:', userId);
-    console.log('UserEmail en localStorage:', userEmail);
+    console.log('UserID:', userId);
+    console.log('UserEmail:', userEmail);
+    console.log('UserRole:', userRole);
     
     // Si no hay usuario logueado, redirigir a login
     if (!userId || !userEmail) {
         console.log('No hay usuario logueado, redirigiendo a login...');
         
-        // Verificar si ya estamos en la página de login para evitar bucle infinito
         const currentPage = window.location.pathname.split('/').pop();
         if (currentPage !== 'login.html' && 
             currentPage !== 'register.html' && 
@@ -105,11 +106,16 @@ document.addEventListener("DOMContentLoaded", function () {
             alert('Por favor, inicie sesión para continuar');
             window.location.href = 'login.html';
         }
+    } else if (userRole === 'admin') {
+        // Si es admin en página de usuario, redirigir a admin
+        console.log('Admin accediendo a página de usuario, redirigiendo...');
+        window.location.href = 'a_index.html';
     } else {
-        console.log('Usuario logueado:', userEmail);
+        console.log('Usuario normal logueado:', userEmail);
         // Continuar con el resto del código...
     }
 });
+   
         function getAlbumImages(idAlbum) {
             const startImage = (idAlbum - 1) * 4 + 1;
             return {

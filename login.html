@@ -21,9 +21,6 @@
             <button type="submit" class="btn">Entrar</button>
         </form>
 
-        <p class="register-text">
-            <a href="cperdida.html" class="register-link">Olvidé mi contraseña</a>
-        </p>
 
         <p class="register-text">
             ¿No tienes cuenta? <a href="register.html" class="register-link">Regístrate</a>
@@ -33,93 +30,192 @@
     <script src="main.js"></script>
     <!-- login.html - Agregar este script antes del cierre de body -->
 <script>
+<!-- En login.html, reemplaza todo el script con este: -->
+
+// Función para limpiar datos de sesión previa pero no todo
+function cleanPreviousSession() {
+    // Guardar algunos datos que podrían ser necesarios
+    const rememberMe = localStorage.getItem('rememberMe');
+    const lastLoginEmail = localStorage.getItem('lastLoginEmail');
+    
+    // Limpiar solo datos de sesión
+    const itemsToKeep = ['rememberMe', 'lastLoginEmail', 'language', 'theme'];
+    const allItems = Object.keys(localStorage);
+    
+    allItems.forEach(key => {
+        if (!itemsToKeep.includes(key)) {
+            localStorage.removeItem(key);
+        }
+    });
+    
+    // Restaurar datos guardados
+    if (lastLoginEmail) {
+        document.getElementById('email').value = lastLoginEmail;
+    }
+}
+
+// Función para detectar navegador
+function getBrowserInfo() {
+    const ua = navigator.userAgent;
+    let browser = "unknown";
+    
+    if (ua.includes("Chrome") && !ua.includes("Edg")) browser = "chrome";
+    else if (ua.includes("Firefox")) browser = "firefox";
+    else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "safari";
+    else if (ua.includes("Edg")) browser = "edge";
+    
+    return browser;
+}
+
+// Función para verificar compatibilidad de localStorage
+function isLocalStorageAvailable() {
+    try {
+        const test = '__storage_test__';
+        localStorage.setItem(test, test);
+        localStorage.removeItem(test);
+        return true;
+    } catch(e) {
+        console.warn('LocalStorage no disponible:', e);
+        return false;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const submitBtn = loginForm.querySelector('.btn');
     
-    // Reemplaza todo el bloque del evento submit con esto:
-loginForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
+    // Detectar navegador
+    const browser = getBrowserInfo();
+    console.log('Navegador detectado:', browser);
     
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    
-    if (!email || !password) {
-        alert('Por favor, complete todos los campos');
-        return;
+    // Verificar localStorage
+    if (!isLocalStorageAvailable()) {
+        alert('Tu navegador no soporta almacenamiento local. Algunas funciones pueden no estar disponibles.');
     }
     
-    const submitBtn = loginForm.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Verificando...';
+    // Limpiar sesión previa al cargar la página de login
+    cleanPreviousSession();
     
-    try {
-        const response = await fetch('api.php?action=login&t=' + Date.now(), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache'
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
-        });
+    // Verificar si ya hay una sesión activa (solo si es reciente)
+    const lastLoginTime = localStorage.getItem('lastLoginTime');
+    const userRole = localStorage.getItem('userRole');
+    const userEmail = localStorage.getItem('userEmail');
+    
+    // Si la sesión es de hace menos de 1 hora, redirigir automáticamente
+    if (lastLoginTime && userRole && userEmail) {
+        const sessionAge = Date.now() - parseInt(lastLoginTime);
+        const oneHour = 60 * 60 * 1000;
         
-        const result = await response.json();
-        console.log('Respuesta del servidor:', result);
-        
-        if (result.success && result.user) {
-            // Limpiar localStorage previo
+        if (sessionAge < oneHour) {
+            if (userRole === 'admin') {
+                window.location.href = 'a_index.html';
+            } else {
+                window.location.href = 'index.html';
+            }
+            return;
+        } else {
+            // Sesión expirada, limpiar
+            localStorage.removeItem('lastLoginTime');
+        }
+    }
+    
+    // Restaurar email si existe en el campo
+    const savedEmail = localStorage.getItem('savedEmail');
+    if (savedEmail && emailInput) {
+        emailInput.value = savedEmail;
+    }
+    
+    loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!email || !password) {
+            alert('Complete todos los campos');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Verificando...';
+
+        try {
+            // Para navegadores Safari/WebKit, agregar timestamp para evitar caché
+            const url = 'api.php?action=login&_t=' + Date.now();
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache'
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            // Verificar si la respuesta es JSON válido
+            const text = await response.text();
+            let result;
+            
+            try {
+                result = JSON.parse(text);
+            } catch (jsonError) {
+                console.error('Respuesta no JSON:', text);
+                throw new Error('Error en la respuesta del servidor');
+            }
+            
+            console.log('Respuesta completa:', result);
+            
+            if (!result.success) {
+                alert(result.message || 'Credenciales incorrectas');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Entrar';
+                return;
+            }
+
+            if (!result.user || !result.user.role) {
+                alert('Error: datos de usuario incompletos');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Entrar';
+                return;
+            }
+
+            const role = result.user.role.trim().toLowerCase();
+            const userId = result.user.id;
+            
+            // LIMPIAR COMPLETAMENTE antes de guardar nuevos datos
             localStorage.clear();
             
-            // Normalizar el rol
-            const userRole = String(result.user.role).trim().toLowerCase();
+            // Guardar datos de sesión FRESCOS
+            localStorage.setItem('userRole', role);
+            localStorage.setItem('userEmail', email);
+            localStorage.setItem('userId', userId);
+            localStorage.setItem('lastLoginTime', Date.now().toString());
+            localStorage.setItem('browser', browser);
             
-            // Guardar en localStorage
-            localStorage.setItem('userId', result.user.id);
-            localStorage.setItem('userEmail', result.user.email);
-            localStorage.setItem('userRole', userRole);
-            localStorage.setItem('userName', result.user.nombre);
-            localStorage.setItem('userLastName', result.user.apellido);
-            localStorage.setItem('lastLogin', Date.now());
+            // Guardar email para futuro autocompletado (opcional)
+            localStorage.setItem('savedEmail', email);
             
-            // Forzar escritura en storage
-            window.dispatchEvent(new Event('storage'));
+            console.log('Datos guardados en localStorage:');
+            console.log('- Role:', localStorage.getItem('userRole'));
+            console.log('- Email:', localStorage.getItem('userEmail'));
+            console.log('- Browser:', localStorage.getItem('browser'));
             
-            // Redirección inmediata
-            setTimeout(() => {
-                if (userRole === 'admin') {
-                    window.location.replace('a_index.html?t=' + Date.now());
-                } else {
-                    window.location.replace('index.html?t=' + Date.now());
-                }
-            }, 100);
-            
-        } else {
-            alert(result.message || 'Error en las credenciales');
+            // Redirigir inmediatamente según rol
+            if (role === 'admin') {
+                window.location.replace('a_index.html');
+            } else {
+                window.location.replace('index.html');
+            }
+
+        } catch (err) {
+            console.error('Error en login:', err);
+            alert('Error de conexión: ' + err.message);
             submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
+            submitBtn.textContent = 'Entrar';
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error de conexión. Intente nuevamente.');
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
-    }
-});
-    // Verificar si ya está logueado
-    const userEmail = localStorage.getItem('userEmail');
-    const userRole = localStorage.getItem('userRole');
-    
-    if (userEmail && userRole) {
-        // Si ya está logueado, redirigir según rol
-        if (userRole === 'admin') {
-            window.location.href = 'a_index.html';
-        } else {
-            window.location.href = 'index.html';
-        }
-    }
+    });
 });
 </script>
 </body>

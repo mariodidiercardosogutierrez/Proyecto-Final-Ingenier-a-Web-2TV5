@@ -732,12 +732,10 @@
     <aside class="sidebar">
         <h2 class="sidebar-title">SoundSpace Admin</h2>
         <nav class="menu">
-            <a href="a_index.html">📊 Dashboard</a>
+           <a href="a_index.html" class="active">📊 Dashboard</a>
             <a href="a_usuarios.html">👤 Usuarios</a>
-            <a href="a_roles.html">🔑 Roles</a>
             <a href="a_catalogo.html">🎵 Catálogo</a>
-            <a href="a_compras.html" class="active">💰 Compras</a>
-            <a href="a_reportes.html">📈 Reportes</a>
+            <a href="a_compras.html">💰 Compras</a>
             <a href="#" id="logoutBtn">🚪 Cerrar Sesión</a>
         </nav>
     </aside>
@@ -833,7 +831,6 @@
             
             <div class="export-buttons">
                 <button class="export-btn" onclick="exportToCSV()">📥 CSV</button>
-                <button class="export-btn" onclick="exportToExcel()">📊 Excel</button>
                 <button class="export-btn" onclick="printReport()">🖨️ Imprimir</button>
             </div>
         </div>
@@ -956,14 +953,13 @@
         });
 
         function checkAdminAuth() {
-            const userRole = localStorage.getItem('userRole');
-            if (userRole !== 'admin') {
-                alert('Acceso denegado. Solo administradores pueden acceder.');
-                window.location.href = 'index.html';
-                return false;
-            }
-            return true;
-        }
+    const userRole = localStorage.getItem('userRole');
+    if (userRole !== 'admin') {
+        window.location.replace('login.html');
+        return false;
+    }
+    return true;
+}
 
         // Inicializar filtros de fecha
         function initializeDateFilters() {

@@ -347,10 +347,8 @@
         <nav class="menu">
             <a href="a_index.html" class="active">📊 Dashboard</a>
             <a href="a_usuarios.html">👤 Usuarios</a>
-            <a href="a_roles.html">🔑 Roles</a>
             <a href="a_catalogo.html">🎵 Catálogo</a>
             <a href="a_compras.html">💰 Compras</a>
-            <a href="a_reportes.html">📈 Reportes</a>
             <a href="#" id="logoutBtn">🚪 Cerrar Sesión</a>
         </nav>
     </aside>
@@ -368,18 +366,6 @@
             </div>
         </div>
 
-        <!-- Botones de acción -->
-        <div class="action-buttons">
-            <button class="action-btn" onclick="loadStatistics()">
-                🔄 Actualizar Datos
-            </button>
-            <button class="action-btn secondary" onclick="openQuickActions()">
-                ⚡ Acciones Rápidas
-            </button>
-            <button class="action-btn secondary" onclick="exportReport()">
-                📊 Exportar Reporte
-            </button>
-        </div>
 
         <!-- Grid de estadísticas detalladas -->
         <div class="stats-grid">
@@ -439,41 +425,56 @@
 
     <script>
         // Verificar autenticación
-        document.addEventListener('DOMContentLoaded', function() {
-            checkAdminAuth();
-            loadStatistics();
-            loadRecentActivity();
-            
-            // Botón de cerrar sesión
-            document.getElementById('logoutBtn').addEventListener('click', function(e) {
-                e.preventDefault();
-                logoutAdmin();
-            });
-        });
+       document.addEventListener('DOMContentLoaded', function() {
+    
 
-        // Verificar si el usuario es administrador
-        function checkAdminAuth() {
-            const userRole = localStorage.getItem('userRole');
-            const userEmail = localStorage.getItem('userEmail');
-            
-            if (!userEmail || userRole !== 'admin') {
-                alert('Acceso denegado. Solo administradores pueden acceder a esta sección.');
-                window.location.href = 'login.html';
-                return false;
-            }
-            return true;
-        }
+    loadStatistics();
+    loadRecentActivity();
+
+    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        logoutAdmin();
+    });
+});
+
+
+// Verificar si el usuario es administrador
+function checkAdminAuth() {
+    const userRole = localStorage.getItem('userRole');
+    console.log('Rol en localStorage:', userRole);
+    
+    if (!userRole || userRole !== 'admin') {
+        console.log('Acceso denegado. Redirigiendo a login...');
+        window.location.href = 'login.html';
+        return false;
+    }
+    return true;
+}
+
+// Verificar al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar autenticación PRIMERO
+    if (!checkAdminAuth()) {
+        return;
+    }
+    
+    // Si es admin, continuar cargando
+    loadStatistics();
+    loadRecentActivity();
+
+    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        logoutAdmin();
+    });
+});
+
 
         // Cerrar sesión
         function logoutAdmin() {
-            if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-                localStorage.removeItem('userId');
-                localStorage.removeItem('userEmail');
-                localStorage.removeItem('userRole');
-                localStorage.removeItem('userName');
-                window.location.href = 'login.html';
-            }
-        }
+    localStorage.clear();
+    window.location.replace('login.html');
+}
+
 
         // Cargar estadísticas
         async function loadStatistics() {
