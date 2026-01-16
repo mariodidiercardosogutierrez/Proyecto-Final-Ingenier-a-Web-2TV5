@@ -110,7 +110,13 @@ document.addEventListener("DOMContentLoaded", function () {
         // Si es admin en página de usuario, redirigir a admin
         console.log('Admin accediendo a página de usuario, redirigiendo...');
         window.location.href = 'a_index.html';
-    } else {
+    }
+    else if (userRole === 'artista') {
+        // Si es admin en página de usuario, redirigir a admin
+        console.log('Admin accediendo a página de usuario, redirigiendo...');
+        window.location.href = 'art_catalogo.html';
+    }  
+    else {
         console.log('Usuario normal logueado:', userEmail);
         // Continuar con el resto del código...
     }

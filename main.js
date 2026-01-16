@@ -1,46 +1,35 @@
-// ====================
-// SIDEBAR
-// ====================
-document.addEventListener("DOMContentLoaded", function () {
-    const showBtn = document.getElementById("showSidebarBtn");
-    const sidebar = document.querySelector(".sidebar");
-    const hideBtn = document.querySelector(".sidebar-hide-btn");
 
-    if (showBtn) {
-        showBtn.addEventListener("click", function () {
-            sidebar.classList.add("active");
-            showBtn.style.display = "none";
-        });
-    }
 
-    if (hideBtn) {
-        hideBtn.addEventListener("click", function () {
-            sidebar.classList.remove("active");
-            if (showBtn) showBtn.style.display = "block";
-        });
-    }
+document.addEventListener('DOMContentLoaded', () => {
 
-    // Cerrar sidebar al hacer clic fuera de ella en móviles
-    document.addEventListener("click", function (event) {
-        if (window.innerWidth <= 768) {
-            if (sidebar.classList.contains("active") &&
-                !sidebar.contains(event.target) &&
-                event.target !== showBtn) {
-                sidebar.classList.remove("active");
-                if (showBtn) showBtn.style.display = "block";
-            }
-        }
+    const sidebar = document.querySelector('.sidebar');
+    const showBtn = document.getElementById('showSidebarBtn'); // 👈 ID REAL
+    const hideBtn = document.querySelector('.sidebar-hide-btn');
+    const content = document.querySelector('.content');
+
+    console.log(sidebar, showBtn, hideBtn);
+
+    // Estado inicial: sidebar visible (desktop)
+    showBtn.style.display = 'none';
+
+    showBtn.addEventListener('click', () => {
+        sidebar.classList.remove('hidden');
+        content.classList.remove('full');
+        showBtn.style.display = 'none';
     });
 
-    // Evitar cierre en desktop
-    sidebar.addEventListener("click", function (event) {
-        event.stopPropagation();
+    hideBtn.addEventListener('click', () => {
+        sidebar.classList.add('hidden');
+        content.classList.add('full');
+        showBtn.style.display = 'block';
     });
-
-    // Inicializar funciones de usuario y carrito
+ // Inicializar funciones de usuario y carrito
     initUserDisplay();
     initCartCount();
 });
+
+
+
 
 // ====================
 // LOGIN/LOGOUT

@@ -39,7 +39,6 @@
             <button class="tab-btn active" onclick="switchTab('albums')">
                 💿 Álbumes
             </button>
-        
         </div>
 
         <!-- Estadísticas -->
@@ -245,11 +244,7 @@
   </div>
 </div>
 
-
-    
-    
-    
-        <!-- Modal para agregar/editar ARTISTA -->
+    <!-- Modal para agregar/editar ARTISTA -->
     <div id="artistModal" class="modal">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
@@ -335,6 +330,20 @@
             currentProductType: 'album'
         };
 
+        // Función auxiliar para obtener número de imagen basado en ID de álbum
+        // Secuencia: ID 1 → 1.png, ID 2 → 5.png, ID 3 → 9.png, ID 4 → 13.png, etc.
+        function getAlbumImageNumber(albumId) {
+            if (!albumId || albumId <= 0) return 1;
+            
+            // Fórmula: (ID - 1) * 4 + 1
+            // Ejemplo: 
+            // ID 1: (1-1)*4+1 = 0*4+1 = 1 → 1.png
+            // ID 2: (2-1)*4+1 = 1*4+1 = 5 → 5.png  
+            // ID 3: (3-1)*4+1 = 2*4+1 = 9 → 9.png
+            // ID 4: (4-1)*4+1 = 3*4+1 = 13 → 13.png
+            return ((albumId - 1) * 4) + 1;
+        }
+
         // Verificar autenticación de admin
         document.addEventListener('DOMContentLoaded', function() {
             checkAdminAuth();
@@ -344,24 +353,25 @@
         });
 
         function checkAdminAuth() {
-    const userRole = localStorage.getItem('userRole');
-    if (userRole !== 'admin') {
-        window.location.replace('login.html');
-        return false;
-    }
-    return true;
-}
+            const userRole = localStorage.getItem('userRole');
+            if (userRole !== 'admin') {
+                window.location.replace('login.html');
+                return false;
+            }
+            return true;
+        }
+
         function clearAllSongs() {
-    const songCount = document.querySelectorAll('.song-row').length;
-    if (songCount === 0) return;
-    
-    if (confirm(`¿Estás seguro de que quieres eliminar todas las ${songCount} canciones?`)) {
-        document.getElementById('songsContainer').innerHTML = '';
-        if (window.songsToDelete) window.songsToDelete = [];
-        // Agregar una fila vacía
-        addSongRow();
-    }
-}
+            const songCount = document.querySelectorAll('.song-row').length;
+            if (songCount === 0) return;
+            
+            if (confirm(`¿Estás seguro de que quieres eliminar todas las ${songCount} canciones?`)) {
+                document.getElementById('songsContainer').innerHTML = '';
+                if (window.songsToDelete) window.songsToDelete = [];
+                // Agregar una fila vacía
+                addSongRow();
+            }
+        }
 
         // Cargar catálogo completo
         async function loadCatalog() {
@@ -384,7 +394,7 @@
                     catalogData.artists = artistsData.artists;
                 }
                 
-                // Cargar canciones
+                // Cargar canciones (solo para estadísticas)
                 const songsResponse = await fetch('api.php?action=getSongsStats');
                 const songsData = await songsResponse.json();
                 
@@ -555,11 +565,8 @@
             let html = '';
             
             pageAlbums.forEach((album, index) => {
-                // Calcular imagen basada en el ID del álbum (cada 4 álbumes usan las mismas imágenes)
-                let imageNumber = 1;
-                if (album.id_album) {
-                    imageNumber = ((album.id_album - 1) % 4) + 1; // 1, 2, 3, 4, luego se repite
-                }
+                // Calcular imagen basada en el ID del álbum usando la función auxiliar
+                const imageNumber = getAlbumImageNumber(album.id_album);
                 const imageUrl = `images/${imageNumber}.png`;
                 
                 // Determinar si es nuevo o destacado
@@ -568,88 +575,107 @@
                 if (album.anio >= currentYear - 1) badges.push('<span class="badge badge-new">Nuevo</span>');
                 if (parseFloat(album.precio) > 500) badges.push('<span class="badge badge-featured">Destacado</span>');
                 
-             // Dentro de renderCardsView, en la sección de acciones de la tarjeta:
-html += `
-    <div class="product-actions">
-        <button class="action-btn view-btn" onclick="viewAlbumSongs(${album.id_album})">
-            🎵 Ver Canciones
-        </button>
-        <button class="action-btn view-btn" onclick="viewProduct(${album.id_album})">
-            👁️ Ver
-        </button>
-        <button class="action-btn edit-btn" onclick="editAlbum(${album.id_album})">
-            ✏️ Editar
-        </button>
-        <button class="action-btn delete-btn" onclick="confirmDeleteAlbum(${album.id_album})">
-            🗑️ Eliminar
-        </button>
-    </div>
-`;
+                html += `
+                    <div class="product-card">
+                        ${badges.join('')}
+                        <div class="product-image">
+                            <img src="${imageUrl}" alt="${album.titulo}" 
+                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/300x180?text=Album+${imageNumber}'">
+                        </div>
+                        <div class="product-info">
+                            <h3>${album.titulo}</h3>
+                            <p class="artist">🎤 ${album.nombre_artista}</p>
+                            <div class="product-details">
+                                <span class="tag">${album.genero_album}</span>
+                                <span class="tag">${album.anio}</span>
+                                <span class="tag">${album.cantidadtemas} temas</span>
+                            </div>
+                            <div class="product-footer">
+                                <div class="price">$${parseFloat(album.precio).toFixed(2)}</div>
+                                <div class="product-actions">
+                                    <button class="action-btn view-btn" onclick="viewAlbumSongs(${album.id_album})">
+                                        🎵 Ver Canciones
+                                    </button>
+                                    <button class="action-btn view-btn" onclick="viewProduct(${album.id_album})">
+                                        👁️ Ver
+                                    </button>
+                                    <button class="action-btn edit-btn" onclick="editAlbum(${album.id_album})">
+                                        ✏️ Editar
+                                    </button>
+                                    <button class="action-btn delete-btn" onclick="confirmDeleteAlbum(${album.id_album})">
+                                        🗑️ Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
             });
             
             container.innerHTML = html;
         }
-// Ver canciones del álbum
-async function viewAlbumSongs(albumId) {
-    try {
-        const response = await fetch(`api.php?action=getCancionesByAlbum&albumId=${albumId}`);
-        const data = await response.json();
-        
-        if (data.success) {
-            const album = data.album;
-            let songsHtml = '';
-            
-            if (data.canciones && data.canciones.length > 0) {
-                songsHtml = `
-                    <h3 style="color: #8b0000; margin-bottom: 15px;">${album.titulo} - Canciones</h3>
-                    <p><strong>Artista:</strong> ${album.nombre_artista}</p>
-                    <p><strong>Cantidad de temas:</strong> ${album.cantidadtemas}</p>
-                    <div style="margin-top: 20px;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr style="background: #f2f2f2;">
-                                    <th style="padding: 10px; text-align: left;">#</th>
-                                    <th style="padding: 10px; text-align: left;">Título</th>
-                                    <th style="padding: 10px; text-align: left;">Duración</th>
-                                    <th style="padding: 10px; text-align: left;">Precio</th>
+
+        // Ver canciones del álbum
+        async function viewAlbumSongs(albumId) {
+            try {
+                const response = await fetch(`api.php?action=getCancionesByAlbum&albumId=${albumId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const album = data.album;
+                    let songsHtml = '';
+                    
+                    if (data.canciones && data.canciones.length > 0) {
+                        songsHtml = `
+                            <h3 style="color: #8b0000; margin-bottom: 15px;">${album.titulo} - Canciones</h3>
+                            <p><strong>Artista:</strong> ${album.nombre_artista}</p>
+                            <p><strong>Cantidad de temas:</strong> ${album.cantidadtemas}</p>
+                            <div style="margin-top: 20px;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background: #f2f2f2;">
+                                            <th style="padding: 10px; text-align: left;">#</th>
+                                            <th style="padding: 10px; text-align: left;">Título</th>
+                                            <th style="padding: 10px; text-align: left;">Duración</th>
+                                            <th style="padding: 10px; text-align: left;">Precio</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        data.canciones.forEach((song, index) => {
+                            songsHtml += `
+                                <tr style="border-bottom: 1px solid #ddd;">
+                                    <td style="padding: 10px;">${index + 1}</td>
+                                    <td style="padding: 10px;">${song.titulo}</td>
+                                    <td style="padding: 10px;">${song.duracion}</td>
+                                    <td style="padding: 10px;">$${parseFloat(song.precio || 0).toFixed(2)}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                `;
-                
-                data.canciones.forEach((song, index) => {
-                    songsHtml += `
-                        <tr style="border-bottom: 1px solid #ddd;">
-                            <td style="padding: 10px;">${index + 1}</td>
-                            <td style="padding: 10px;">${song.titulo}</td>
-                            <td style="padding: 10px;">${song.duracion}</td>
-                            <td style="padding: 10px;">$${parseFloat(song.precio || 0).toFixed(2)}</td>
-                        </tr>
-                    `;
-                });
-                
-                songsHtml += `
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            } else {
-                songsHtml = `
-                    <h3 style="color: #8b0000; margin-bottom: 15px;">${album.titulo}</h3>
-                    <p><strong>Artista:</strong> ${album.nombre_artista}</p>
-                    <p style="color: #666; margin-top: 20px;">Este álbum no tiene canciones registradas.</p>
-                `;
+                            `;
+                        });
+                        
+                        songsHtml += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                    } else {
+                        songsHtml = `
+                            <h3 style="color: #8b0000; margin-bottom: 15px;">${album.titulo}</h3>
+                            <p><strong>Artista:</strong> ${album.nombre_artista}</p>
+                            <p style="color: #666; margin-top: 20px;">Este álbum no tiene canciones registradas.</p>
+                        `;
+                    }
+                    
+                    document.getElementById('previewTitle').textContent = `Canciones: ${album.titulo}`;
+                    document.getElementById('previewContent').innerHTML = songsHtml;
+                    document.getElementById('previewModal').style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Error cargando canciones:', error);
+                showNotification('Error al cargar canciones', 'error');
             }
-            
-            document.getElementById('previewTitle').textContent = `Canciones: ${album.titulo}`;
-            document.getElementById('previewContent').innerHTML = songsHtml;
-            document.getElementById('previewModal').style.display = 'flex';
         }
-    } catch (error) {
-        console.error('Error cargando canciones:', error);
-        showNotification('Error al cargar canciones', 'error');
-    }
-}
 
         // Renderizar vista de tabla
         function renderTableView() {
@@ -676,11 +702,8 @@ async function viewAlbumSongs(albumId) {
             let html = '';
             
             pageAlbums.forEach((album, index) => {
-                // Calcular imagen para la vista de tabla
-                let imageNumber = 1;
-                if (album.id_album) {
-                    imageNumber = ((album.id_album - 1) % 4) + 1;
-                }
+                // Calcular imagen usando la función auxiliar
+                const imageNumber = getAlbumImageNumber(album.id_album);
                 
                 html += `
                     <tr>
@@ -689,7 +712,7 @@ async function viewAlbumSongs(albumId) {
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <img src="images/${imageNumber}.png" alt="${album.titulo}" 
                                      style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;"
-                                     onerror="this.onerror=null; this.src='https://via.placeholder.com/40x40?text=Album'">
+                                     onerror="this.onerror=null; this.src='https://via.placeholder.com/40x40?text=Album+${imageNumber}'">
                                 <div>
                                     <strong>${album.titulo}</strong><br>
                                     <small style="color: #666;">${album.descripcion_album?.substring(0, 50) || 'Sin descripción'}...</small>
@@ -794,11 +817,8 @@ async function viewAlbumSongs(albumId) {
             const album = catalogData.albums.find(a => a.id_album == albumId);
             if (!album) return;
             
-            // Calcular imagen basada en el ID del álbum
-            let imageNumber = 1;
-            if (album.id_album) {
-                imageNumber = ((album.id_album - 1) % 4) + 1;
-            }
+            // Calcular imagen usando la función auxiliar
+            const imageNumber = getAlbumImageNumber(album.id_album);
             const imageUrl = `images/${imageNumber}.png`;
             
             document.getElementById('previewTitle').textContent = album.titulo;
@@ -829,31 +849,31 @@ async function viewAlbumSongs(albumId) {
         }
 
         // Abrir modal para agregar álbum
-        // Abrir modal para agregar álbum
-// Abrir modal para agregar álbum
-function openAddAlbumModal() {
-    document.getElementById('albumModalTitle').textContent = 'Nuevo Álbum';
-    document.getElementById('albumForm').reset();
-    document.getElementById('albumId').value = '';
-    
-    // Establecer valores por defecto
-    const currentYear = new Date().getFullYear();
-    document.getElementById('albumYear').value = currentYear;
-    document.getElementById('albumPrice').value = '99.99';
-    document.getElementById('albumGenre').value = 'Pop';
-    
-    // 🔥 LIMPIAR LAS CANCIONES PREVIAS
-    document.getElementById('songsContainer').innerHTML = '';
-    
-    // Limpiar lista de canciones a eliminar
-    if (window.songsToDelete) window.songsToDelete = [];
-    
-    // Agregar dos filas vacías por defecto
-    addSongRow();
-    addSongRow();
-    
-    openAlbumModal();
-}        // Abrir modal para agregar artista
+        function openAddAlbumModal() {
+            document.getElementById('albumModalTitle').textContent = 'Nuevo Álbum';
+            document.getElementById('albumForm').reset();
+            document.getElementById('albumId').value = '';
+            
+            // Establecer valores por defecto
+            const currentYear = new Date().getFullYear();
+            document.getElementById('albumYear').value = currentYear;
+            document.getElementById('albumPrice').value = '99.99';
+            document.getElementById('albumGenre').value = 'Pop';
+            
+            // LIMPIAR LAS CANCIONES PREVIAS
+            document.getElementById('songsContainer').innerHTML = '';
+            
+            // Limpiar lista de canciones a eliminar
+            if (window.songsToDelete) window.songsToDelete = [];
+            
+            // Agregar dos filas vacías por defecto
+            addSongRow();
+            addSongRow();
+            
+            openAlbumModal();
+        }
+
+        // Abrir modal para agregar artista
         function openAddArtistModal() {
             document.getElementById('artistModalTitle').textContent = 'Nuevo Artista';
             document.getElementById('artistForm').reset();
@@ -862,67 +882,63 @@ function openAddAlbumModal() {
         }
 
         // Editar álbum
-        // Editar álbum
-// Editar álbum
-async function editAlbum(albumId) {
-    try {
-        // Cargar información del álbum
-        const albumResponse = await fetch('api.php?action=getAlbums');
-        const albumData = await albumResponse.json();
-        
-        if (albumData.success) {
-            const album = albumData.albums.find(a => a.id_album == albumId);
-            if (album) {
-                // 🔥 LIMPIAR CONTENEDOR ANTES DE AGREGAR NUEVAS CANCIONES
-                document.getElementById('songsContainer').innerHTML = '';
+        async function editAlbum(albumId) {
+            try {
+                // Cargar información del álbum
+                const albumResponse = await fetch('api.php?action=getAlbums');
+                const albumData = await albumResponse.json();
                 
-                // Limpiar lista de canciones a eliminar
-                if (window.songsToDelete) window.songsToDelete = [];
-                
-                // Cargar canciones del álbum
-                const songsResponse = await fetch(`api.php?action=getCancionesByAlbum&albumId=${albumId}`);
-                const songsData = await songsResponse.json();
-                
-                if (songsData.success && songsData.canciones && songsData.canciones.length > 0) {
-                    // Agregar cada canción existente
-                    songsData.canciones.forEach(song => {
-                        addSongRow({
-                            id_cancion: song.id_cancion,
-                            titulo: song.titulo,
-                            duracion: song.duracion,
-                            precio: song.precio || 0
-                        });
-                    });
-                } else {
-                    // Si no hay canciones, agregar una fila vacía
-                    addSongRow();
+                if (albumData.success) {
+                    const album = albumData.albums.find(a => a.id_album == albumId);
+                    if (album) {
+                        // LIMPIAR CONTENEDOR ANTES DE AGREGAR NUEVAS CANCIONES
+                        document.getElementById('songsContainer').innerHTML = '';
+                        
+                        // Limpiar lista de canciones a eliminar
+                        if (window.songsToDelete) window.songsToDelete = [];
+                        
+                        // Cargar canciones del álbum
+                        const songsResponse = await fetch(`api.php?action=getCancionesByAlbum&albumId=${albumId}`);
+                        const songsData = await songsResponse.json();
+                        
+                        if (songsData.success && songsData.canciones && songsData.canciones.length > 0) {
+                            // Agregar cada canción existente
+                            songsData.canciones.forEach(song => {
+                                addSongRow({
+                                    id_cancion: song.id_cancion,
+                                    titulo: song.titulo,
+                                    duracion: song.duracion
+                                    // Nota: No incluimos precio aquí
+                                });
+                            });
+                        } else {
+                            // Si no hay canciones, agregar una fila vacía
+                            addSongRow();
+                        }
+                        
+                        // Rellenar datos del álbum
+                        document.getElementById('albumModalTitle').textContent = 'Editar Álbum';
+                        document.getElementById('albumId').value = album.id_album;
+                        document.getElementById('albumTitle').value = album.titulo;
+                        document.getElementById('albumArtistId').value = album.id_artista;
+                        document.getElementById('albumYear').value = album.anio;
+                        document.getElementById('albumGenre').value = album.genero_album;
+                        document.getElementById('albumPrice').value = album.precio;
+                        document.getElementById('albumDescription').value = album.descripcion_album || '';
+                        
+                        openAlbumModal();
+                    } else {
+                        showNotification('Álbum no encontrado', 'error');
+                    }
                 }
-                
-                // Rellenar datos del álbum
-                document.getElementById('albumModalTitle').textContent = 'Editar Álbum';
-                document.getElementById('albumId').value = album.id_album;
-                document.getElementById('albumTitle').value = album.titulo;
-                document.getElementById('albumArtistId').value = album.id_artista;
-                document.getElementById('albumYear').value = album.anio;
-                document.getElementById('albumGenre').value = album.genero_album;
-                document.getElementById('albumPrice').value = album.precio;
-                document.getElementById('albumDescription').value = album.descripcion_album || '';
-                
-                openAlbumModal();
-            } else {
-                showNotification('Álbum no encontrado', 'error');
+            } catch (error) {
+                console.error('Error cargando álbum:', error);
+                showNotification('Error al cargar datos del álbum', 'error');
             }
         }
-    } catch (error) {
-        console.error('Error cargando álbum:', error);
-        showNotification('Error al cargar datos del álbum', 'error');
-    }
-}
 
         // Guardar álbum
-       // Guardar álbum
-// Guardar álbum (versión final)
-// Guardar álbum
+        // Guardar álbum
 async function saveAlbum() {
     const form = document.getElementById('albumForm');
     if (!form.checkValidity()) {
@@ -930,42 +946,87 @@ async function saveAlbum() {
         return;
     }
     
-    // Obtener canciones del formulario
     const songElements = document.querySelectorAll('.song-row');
     const songs = [];
+    let hasError = false;
     
-    songElements.forEach(row => {
-        // Convertir tiempo formato HH:MM a segundos
-        const timeInput = row.querySelector('.song-duration').value;
-        let durationInSeconds = 0;
+    // En saveAlbum(), modificar la parte que procesa las canciones existentes:
+// En saveAlbum(), reemplaza la parte que procesa las canciones existentes:
+
+songElements.forEach(row => {
+    const titulo = row.querySelector('.song-title').value.trim();
+    const songId = row.querySelector('.song-id').value;
+    const timeInput = row.querySelector('.song-duration').value.trim();
+    
+    // Validar que el título no esté vacío
+    if (!titulo) {
+        showNotification('Todas las canciones deben tener un título', 'error');
+        hasError = true;
+        return;
+    }
+    
+    let durationInSeconds = 0;
+    
+    if (timeInput) {
+        const timeParts = timeInput.split(':');
         
-        if (timeInput) {
-            const timeParts = timeInput.split(':');
-            if (timeParts.length === 2) {
-                const minutes = parseInt(timeParts[0]) || 0;
-                const seconds = parseInt(timeParts[1]) || 0;
-                durationInSeconds = (minutes * 60) + seconds;
-            }
+        // Validar formato
+        if (timeParts.length !== 2) {
+            showNotification('Formato de duración inválido. Use MM:SS (ej: 03:45)', 'error');
+            hasError = true;
+            return;
         }
         
-        songs.push({
-            id_cancion: row.querySelector('.song-id').value || '',
-            titulo: row.querySelector('.song-title').value.trim(),
-            duracion: durationInSeconds,
-            precio: parseFloat(row.querySelector('.song-price').value) || 0
-        });
+        const minutes = parseInt(timeParts[0]) || 0;
+        const seconds = parseInt(timeParts[1]) || 0;
+        
+        if (isNaN(minutes) || isNaN(seconds)) {
+            showNotification('La duración debe contener solo números', 'error');
+            hasError = true;
+            return;
+        }
+        
+        if (minutes < 0 || seconds < 0 || seconds >= 60) {
+            showNotification('Formato inválido. Minutos: 0-59, Segundos: 0-59', 'error');
+            hasError = true;
+            return;
+        }
+        
+        durationInSeconds = (minutes * 60) + seconds;
+        
+        if (durationInSeconds <= 0) {
+            showNotification('La duración debe ser mayor a 0 segundos', 'error');
+            hasError = true;
+            return;
+        }
+    } else {
+        // Si no hay duración ingresada
+        if (songId) {
+            // Para canciones existentes, mantener la duración actual
+            // Enviaremos un valor especial para que el backend lo mantenga
+            durationInSeconds = -1; // Marcador especial
+        } else {
+            showNotification('Todas las canciones deben tener una duración', 'error');
+            hasError = true;
+            return;
+        }
+    }
+    
+    songs.push({
+        id_cancion: songId || '',
+        titulo: titulo,
+        duracion: durationInSeconds, // Enviar en segundos
+        precio: 9.99
     });
+});
+    // Si hay error, detener el proceso
+    if (hasError) {
+        return;
+    }
     
     // Validar que al menos haya una canción
     if (songs.length === 0) {
         showNotification('Debe agregar al menos una canción', 'error');
-        return;
-    }
-    
-    // Validar que todas las canciones tengan título
-    const invalidSongs = songs.filter(song => !song.titulo);
-    if (invalidSongs.length > 0) {
-        showNotification('Todas las canciones deben tener un título', 'error');
         return;
     }
     
@@ -1004,7 +1065,6 @@ async function saveAlbum() {
     
     try {
         let url = 'api.php?action=createAlbumWithSongs';
-        let method = 'POST';
         
         if (albumId) {
             // Actualizar álbum existente
@@ -1053,22 +1113,7 @@ async function saveAlbum() {
     }
 }
 
-// Función auxiliar para obtener datos de canciones
-function getSongsData() {
-    return [...document.querySelectorAll('.song-row')].map(row => {
-        const timeInput = row.querySelector('.song-duration').value;
-        const [minutes, seconds] = timeInput.split(':').map(Number);
-        const durationInSeconds = (minutes * 60) + seconds;
-        
-        return {
-            id_cancion: row.querySelector('.song-id').value || '',
-            titulo: row.querySelector('.song-title').value.trim(),
-            duracion: durationInSeconds,
-            precio: parseFloat(row.querySelector('.song-price').value) || 0
-        };
-    });
-}
-        // Guardar artista
+// Guardar artista
         async function saveArtist() {
             const form = document.getElementById('artistForm');
             if (!form.checkValidity()) {
@@ -1165,15 +1210,15 @@ function getSongsData() {
         }
 
         function closeAlbumModal() {
-    document.getElementById('albumModal').style.display = 'none';
-    
-    // 🔥 LIMPIAR TODO AL CERRAR
-    document.getElementById('songsContainer').innerHTML = '';
-    if (window.songsToDelete) window.songsToDelete = [];
-    
-    // También puedes resetear el formulario completamente
-    document.getElementById('albumForm').reset();
-}
+            document.getElementById('albumModal').style.display = 'none';
+            
+            // LIMPIAR TODO AL CERRAR
+            document.getElementById('songsContainer').innerHTML = '';
+            if (window.songsToDelete) window.songsToDelete = [];
+            
+            // También puedes resetear el formulario completamente
+            document.getElementById('albumForm').reset();
+        }
 
         function openArtistModal() {
             document.getElementById('artistModal').style.display = 'flex';
@@ -1255,13 +1300,15 @@ function getSongsData() {
                 }
             });
         }
-        function addSongRow(song = {}) {
+
+        // Función para agregar fila de canción (SIN PRECIO)
+      function addSongRow(song = {}) {
     const container = document.getElementById('songsContainer');
     
     const row = document.createElement('div');
     row.className = 'song-row';
     row.style.display = 'grid';
-    row.style.gridTemplateColumns = '2fr 1fr 1fr auto';
+    row.style.gridTemplateColumns = '2fr 1fr auto';
     row.style.gap = '10px';
     row.style.marginBottom = '10px';
     row.style.alignItems = 'center';
@@ -1270,18 +1317,45 @@ function getSongsData() {
     row.style.borderRadius = '5px';
     row.style.backgroundColor = '#f9f9f9';
     
-    // Formatear duración para input time (formato: HH:MM)
-    let durationValue = '00:00';
+    // CONVERSIÓN MEJORADA DE DURACIÓN
+    let durationValue = '01:22'; // Valor por defecto
+    
     if (song.duracion) {
         if (typeof song.duracion === 'number') {
-            // Si es número (segundos), convertir a MM:SS
+            // Convertir segundos a MM:SS
             const minutes = Math.floor(song.duracion / 60);
             const seconds = song.duracion % 60;
             durationValue = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         } else if (typeof song.duracion === 'string') {
-            // Si es string, verificar formato
-            if (song.duracion.includes(':')) {
-                durationValue = song.duracion;
+            // Si está en formato TIME de MySQL (HH:MM:SS)
+            if (song.duracion.includes(':') && song.duracion.split(':').length === 3) {
+                // Convertir HH:MM:SS a MM:SS
+                const parts = song.duracion.split(':');
+                const hours = parseInt(parts[0]) || 0;
+                const minutes = parseInt(parts[1]) || 0;
+                const totalMinutes = (hours * 60) + minutes;
+                const seconds = parseInt(parts[2]) || 0;
+                durationValue = `${totalMinutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else if (song.duracion.includes(':')) {
+                // Ya está en formato MM:SS o HH:MM:SS
+                const parts = song.duracion.split(':');
+                if (parts.length === 2) {
+                    // MM:SS
+                    durationValue = song.duracion;
+                } else if (parts.length === 3) {
+                    // HH:MM:SS → convertir a MM:SS
+                    const hours = parseInt(parts[0]) || 0;
+                    const minutes = parseInt(parts[1]) || 0;
+                    const totalMinutes = (hours * 60) + minutes;
+                    const seconds = parseInt(parts[2]) || 0;
+                    durationValue = `${totalMinutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            } else if (!isNaN(song.duracion)) {
+                // Es un número en string (segundos)
+                const seconds = parseInt(song.duracion);
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                durationValue = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
             }
         }
     }
@@ -1290,10 +1364,11 @@ function getSongsData() {
         <input type="hidden" class="song-id" value="${song.id_cancion || ''}">
         <input type="text" class="song-title" placeholder="Título de la canción" 
                value="${song.titulo || ''}" required style="padding: 8px;">
-        <input type="time" class="song-duration" step="1" 
-               value="${durationValue}" required style="padding: 8px;">
-        <input type="number" class="song-price" placeholder="Precio" step="0.01" 
-               min="0" value="${song.precio || 0}" style="padding: 8px;">
+        <input type="text" class="song-duration" placeholder="MM:SS" 
+               value="${durationValue}" required style="padding: 8px;"
+               pattern="^[0-5]?[0-9]:[0-5][0-9]$" 
+               title="Formato: minutos:segundos (ej: 03:45)"
+               onblur="validateDuration(this)">
         <button type="button" class="delete-song-btn" onclick="removeSongRow(this)" 
                 title="Eliminar canción" style="padding: 8px 12px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
             🗑️
@@ -1302,46 +1377,56 @@ function getSongsData() {
     
     container.appendChild(row);
 }
-
-// Función auxiliar para formatear tiempo
-function formatTimeForInput(timeStr) {
-    if (!timeStr) return '00:00';
     
-    // Si ya está en formato HH:MM:SS o MM:SS
-    if (timeStr.includes(':')) {
-        const parts = timeStr.split(':');
-        if (parts.length === 3) {
-            // Formato HH:MM:SS -> convertir a MM:SS
-            const minutes = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-            return `${minutes.toString().padStart(2, '0')}:${parts[2].padStart(2, '0')}`;
-        }
-        return timeStr.length === 5 ? timeStr : '00:00';
+    function validateDuration(input) {
+    const value = input.value.trim();
+    const pattern = /^([0-5]?[0-9]):([0-5][0-9])$/;
+    
+    if (!pattern.test(value)) {
+        input.style.borderColor = 'red';
+        showNotification('Formato de duración inválido. Use MM:SS (ej: 03:45)', 'warning');
+        return false;
     }
     
-    // Si es un número (segundos)
-    const totalSeconds = parseInt(timeStr);
-    if (!isNaN(totalSeconds)) {
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    const parts = value.split(':');
+    const minutes = parseInt(parts[0]);
+    const seconds = parseInt(parts[1]);
+    
+    if (minutes < 0 || seconds < 0 || seconds >= 60) {
+        input.style.borderColor = 'red';
+        showNotification('Valores inválidos. Minutos: 0-59, Segundos: 0-59', 'warning');
+        return false;
     }
     
-    return '00:00';
+    if (minutes === 0 && seconds === 0) {
+        input.style.borderColor = 'red';
+        showNotification('La duración no puede ser 00:00', 'warning');
+        return false;
+    }
+    
+    // Validar duración máxima (ej: 30 minutos)
+    if (minutes > 30) {
+        input.style.borderColor = 'orange';
+        showNotification('Duración muy larga. ¿Estás seguro?', 'warning');
+        return true; // Permitir pero con advertencia
+    }
+    
+    input.style.borderColor = '#4CAF50'; // Verde para indicar válido
+    return true;
 }
-
-// Función para eliminar fila de canción
-function removeSongRow(button) {
-    const row = button.closest('.song-row');
-    if (row) {
-        // Si tiene un ID de canción, marcarla para eliminación
-        const songId = row.querySelector('.song-id').value;
-        if (songId) {
-            if (!window.songsToDelete) window.songsToDelete = [];
-            window.songsToDelete.push(songId);
+        // Función para eliminar fila de canción
+        function removeSongRow(button) {
+            const row = button.closest('.song-row');
+            if (row) {
+                // Si tiene un ID de canción, marcarla para eliminación
+                const songId = row.querySelector('.song-id').value;
+                if (songId) {
+                    if (!window.songsToDelete) window.songsToDelete = [];
+                    window.songsToDelete.push(songId);
+                }
+                row.remove();
+            }
         }
-        row.remove();
-    }
-}
     </script>
 </body>
 </html>

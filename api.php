@@ -29,13 +29,41 @@ else if ($action === "register") {
     registerUser($conn);
 }
 
+// =======================
+// FUNCIONES PARA ADMIN (a_catalogo.html)
+// =======================
 else if ($action === "createAlbumWithSongs") {
     createAlbumWithSongs($conn);
 }
 else if ($action === "updateAlbumWithSongs") {
     updateAlbumWithSongs($conn);
 }
+else if ($action === "deleteAlbum") {
+    deleteAlbum($conn);
+}
 
+// =======================
+// FUNCIONES PARA ARTISTA (art_catalogo.html)
+// =======================
+else if ($action === "createAlbumWithSongsArtist") {
+    createAlbumWithSongsArtist($conn);
+}
+else if ($action === "updateAlbumWithSongsArtist") {
+    updateAlbumWithSongsArtist($conn);
+}
+else if ($action === "deleteAlbumArtist") {
+    deleteAlbumArtist($conn);
+}
+else if ($action === "getArtistaByUserId") {
+    getArtistaByUserId($conn);
+}
+else if ($action === "getAlbumsByArtistId") {
+    getAlbumsByArtistId($conn);
+}
+
+// =======================
+// FUNCIONES COMPARTIDAS
+// =======================
 else if ($action === "getUsersStats") {
     getUsersStats($conn);
 }
@@ -63,8 +91,6 @@ else if ($action === "updateUser") {
 else if ($action === "deleteUser") {
     deleteUser($conn);
 }
-
-// Agrega estas acciones después de las existentes
 else if ($action === "getAllPurchases") {
     getAllPurchases($conn);
 }
@@ -140,43 +166,21 @@ else if ($action === "test") {
         "timestamp" => date('Y-m-d H:i:s')
     ]);
 }
-
-// =======================
-//  FUNCIONES PARA CRUD DE ÁLBUMES
-// =======================
-
-// CREAR ÁLBUM
 else if ($action === "createAlbum") {
     createAlbum($conn);
 }
-// ACTUALIZAR ÁLBUM
 else if ($action === "updateAlbum") {
     updateAlbum($conn);
 }
-// ELIMINAR ÁLBUM
-else if ($action === "deleteAlbum") {
-    deleteAlbum($conn);
-}
-// CREAR ARTISTA
 else if ($action === "createArtist") {
     createArtist($conn);
 }
-// ACTUALIZAR ARTISTA
 else if ($action === "updateArtist") {
     updateArtist($conn);
 }
-
-
-// ========================
-//  OBTENER COMPRAS DEL USUARIO
-// ========================
 else if ($action === "getUserCompras") {
     getUserCompras($conn);
 }
-
-// ========================
-//  OBTENER ÁLBUMES POR IDs
-// ========================
 else if ($action === "getAlbumsByIds") {
     getAlbumsByIds($conn);
 }
@@ -189,9 +193,6 @@ else if ($action === "addUserCard") {
 else if ($action === "deleteUserCard") {
     deleteUserCard($conn);
 }
-// ========================
-//  OBTENER BIBLIOTECA DEL USUARIO (ALTERNATIVA)
-// ========================
 else if ($action === "getUserLibrary") {
     getUserLibrary($conn);
 }
@@ -204,15 +205,9 @@ else if ($action === "getUserPurchases") {
 else if ($action === "cancelPurchase") {
     cancelPurchase($conn);
 }
-// ========================
-//  PROCESAR PAGO
-// ========================
 else if ($action === "processPayment") {
     processPayment($conn);
 }
-// ========================
-//  GENERAR TICKET PDF
-// ========================
 else if ($action === "generateTicket") {
     generateTicketPDF($conn);
 }
@@ -222,6 +217,10 @@ else {
 }
 
 $conn->close();
+
+// =======================
+//     FUNCIONES BASE
+// =======================
 
 function registerUser($conn) {
     $data = json_decode(file_get_contents("php://input"), true);
@@ -244,7 +243,7 @@ function registerUser($conn) {
     $email = trim($data['email']);
     $telefono = trim($data['telefono']);
     $fecha_nac = $data['fecha_nac'];
-    $password = $data['password']; // Contraseña en texto plano
+    $password = $data['password'];
 
     // Validación de email
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -301,7 +300,7 @@ function registerUser($conn) {
         return;
     }
 
-    // Insertar usuario (SIN HASH porque tu login compara contraseñas en texto plano)
+    // Insertar usuario
     $stmt = $conn->prepare(
         "INSERT INTO usuarios (nombre, apellido, email, telefono, fecha_nac, password, role)
          VALUES (?, ?, ?, ?, ?, ?, 'user')"
@@ -314,7 +313,7 @@ function registerUser($conn) {
         $email,
         $telefono,
         $fecha_nac,
-        $password // Texto plano, NO hasheado
+        $password
     );
 
     if ($stmt->execute()) {
@@ -348,9 +347,6 @@ function registerUser($conn) {
 
 // =======================
 //     FUNCIÓN LOGIN
-// =======================
-// =======================
-//     FUNCIÓN LOGIN (ACTUALIZADA)
 // =======================
 function login($conn) {
     $data = json_decode(file_get_contents("php://input"), true);
@@ -407,9 +403,590 @@ function login($conn) {
         ]
     ]);
 }
+
 // =======================
-//  OBTENER ÁLBUMES
+//  FUNCIONES PARA ADMIN (a_catalogo.html)
 // =======================
+
+// CREAR ÁLBUM CON CANCIONES (ADMIN)
+function createAlbumWithSongs($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!$data || empty($data['songs'])) {
+        echo json_encode(["success" => false, "message" => "El álbum debe tener canciones"]);
+        return;
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        // Calcular duración total sumando todas las canciones
+        $duracion_total = 0;
+        foreach ($data['songs'] as $song) {
+            $duracion_total += intval($song['duracion']);
+        }
+
+        $stmt = $conn->prepare("
+            INSERT INTO Album
+            (titulo, anio, id_artista, duracion_total, descripcion_album, genero_album, cantidadtemas, precio)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        $cantidadTemas = count($data['songs']);
+
+        $stmt->bind_param(
+            "siiissid",
+            $data['titulo'],
+            $data['anio'],
+            $data['id_artista'],
+            $duracion_total,
+            $data['descripcion_album'],
+            $data['genero_album'],
+            $cantidadTemas,
+            $data['precio']
+        );
+        $stmt->execute();
+
+        $albumId = $conn->insert_id;
+
+        $songStmt = $conn->prepare("
+            INSERT INTO Cancion
+            (titulo, duracion, anio, fecha_subida, genero, precio, id_artista, id_album)
+            VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)
+        ");
+
+        foreach ($data['songs'] as $song) {
+            $songStmt->bind_param(
+                "siisiii",
+                $song['titulo'],
+                $song['duracion'],
+                $data['anio'],
+                $data['genero_album'],
+                $song['precio'],
+                $data['id_artista'],
+                $albumId
+            );
+            if (!$songStmt->execute()) {
+                throw new Exception("Error al insertar canción: " . $songStmt->error);
+            }
+        }
+
+        $conn->commit();
+
+        echo json_encode([
+            "success" => true,
+            "message" => "Álbum creado exitosamente",
+            "albumId" => $albumId
+        ]);
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    }
+}
+
+// ACTUALIZAR ÁLBUM CON CANCIONES (ADMIN)
+// Reemplaza la función updateAlbumWithSongs con esta versión mejorada:
+function updateAlbumWithSongs($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!$data || empty($data['id_album'])) {
+        echo json_encode(["success" => false, "message" => "ID de álbum requerido"]);
+        return;
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        $cantidadTemas = count($data['songs']);
+
+        // Calcular duración total
+        $duracion_total = 0;
+        foreach ($data['songs'] as $song) {
+            // IMPORTANTE: Convertir cualquier formato a segundos
+            $duracion_segundos = convertDuracionToSeconds($song['duracion']);
+            $duracion_total += $duracion_segundos;
+        }
+
+        $stmt = $conn->prepare("
+            UPDATE Album SET
+                titulo = ?,
+                anio = ?,
+                id_artista = ?,
+                duracion_total = ?,
+                descripcion_album = ?,
+                genero_album = ?,
+                cantidadtemas = ?,
+                precio = ?
+            WHERE id_album = ?
+        ");
+
+        $stmt->bind_param(
+            "siiissidi",
+            $data['titulo'],
+            $data['anio'],
+            $data['id_artista'],
+            $duracion_total,
+            $data['descripcion_album'],
+            $data['genero_album'],
+            $cantidadTemas,
+            $data['precio'],
+            $data['id_album']
+        );
+        $stmt->execute();
+
+        // Eliminar canciones marcadas para eliminar
+        if (!empty($data['songsToDelete'])) {
+            $deleteIds = implode(',', array_map('intval', $data['songsToDelete']));
+            $conn->query("DELETE FROM Cancion WHERE id_cancion IN ($deleteIds)");
+        }
+
+        // Actualizar o insertar canciones
+        foreach ($data['songs'] as $song) {
+            // CONVERTIR DURACIÓN A FORMATO TIME (HH:MM:SS)
+            $duracion_time = convertSecondsToTime(convertDuracionToSeconds($song['duracion']));
+            
+            if (!empty($song['id_cancion'])) {
+                // Para canciones existentes
+                $updateStmt = $conn->prepare("
+                    UPDATE Cancion SET
+                        titulo = ?,
+                        duracion = ?,
+                        precio = ?
+                    WHERE id_cancion = ?
+                ");
+                $updateStmt->bind_param(
+                    "ssii",
+                    $song['titulo'],
+                    $duracion_time,
+                    $song['precio'],
+                    $song['id_cancion']
+                );
+                $updateStmt->execute();
+                $updateStmt->close();
+            } else {
+                // Insertar nueva canción
+                $insertStmt = $conn->prepare("
+                    INSERT INTO Cancion
+                    (titulo, duracion, anio, fecha_subida, genero, precio, id_artista, id_album)
+                    VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)
+                ");
+                
+                $insertStmt->bind_param(
+                    "ssisiii",
+                    $song['titulo'],
+                    $duracion_time,
+                    $data['anio'],
+                    $data['genero_album'],
+                    $song['precio'],
+                    $data['id_artista'],
+                    $data['id_album']
+                );
+                $insertStmt->execute();
+                $insertStmt->close();
+            }
+        }
+
+        $conn->commit();
+
+        echo json_encode(["success" => true, "message" => "Álbum y canciones actualizados"]);
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    }
+}
+
+// AGREGAR ESTAS FUNCIONES AUXILIARES AL FINAL DEL ARCHIVO api.php:
+
+function convertDuracionToSeconds($duracion) {
+    if (is_numeric($duracion)) {
+        // Ya está en segundos
+        return intval($duracion);
+    }
+    
+    if (is_string($duracion)) {
+        // Formato MM:SS o HH:MM:SS
+        $parts = explode(':', $duracion);
+        
+        if (count($parts) === 2) {
+            // MM:SS
+            $minutes = intval($parts[0]);
+            $seconds = intval($parts[1]);
+            return ($minutes * 60) + $seconds;
+        } elseif (count($parts) === 3) {
+            // HH:MM:SS
+            $hours = intval($parts[0]);
+            $minutes = intval($parts[1]);
+            $seconds = intval($parts[2]);
+            return ($hours * 3600) + ($minutes * 60) + $seconds;
+        }
+    }
+    
+    // Valor por defecto (2 minutos) si no se puede convertir
+    return 120;
+}
+
+function convertSecondsToTime($seconds) {
+    $hours = floor($seconds / 3600);
+    $minutes = floor(($seconds % 3600) / 60);
+    $seconds = $seconds % 60;
+    
+    return sprintf("%02d:%02d:%02d", $hours, $minutes, $seconds);
+}
+
+// ELIMINAR ÁLBUM (ADMIN)
+function deleteAlbum($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!$data || !isset($data['albumId'])) {
+        echo json_encode(["success" => false, "message" => "ID de álbum requerido"]);
+        return;
+    }
+    
+    $albumId = intval($data['albumId']);
+    
+    // Primero eliminar canciones asociadas
+    $deleteSongs = "DELETE FROM Cancion WHERE id_album = $albumId";
+    $conn->query($deleteSongs);
+    
+    // Eliminar álbum
+    $sql = "DELETE FROM Album WHERE id_album = $albumId";
+    
+    if ($conn->query($sql)) {
+        echo json_encode([
+            "success" => true,
+            "message" => "Álbum eliminado exitosamente"
+        ]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Error al eliminar álbum: " . $conn->error]);
+    }
+}
+
+// =======================
+//  FUNCIONES PARA ARTISTA (art_catalogo.html)
+// =======================
+
+// CREAR ÁLBUM CON CANCIONES (ARTISTA)
+function createAlbumWithSongsArtist($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!$data || empty($data['songs'])) {
+        echo json_encode(["success" => false, "message" => "El álbum debe tener canciones"]);
+        return;
+    }
+
+    // Validar que el artista esté creando para sí mismo
+    if (!isset($data['artistId']) || $data['artistId'] <= 0) {
+        echo json_encode(["success" => false, "message" => "Artista no válido"]);
+        return;
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        // Calcular duración total sumando todas las canciones
+        $duracion_total = 0;
+        foreach ($data['songs'] as $song) {
+            // USAR FUNCIÓN AUXILIAR PARA CONVERTIR A SEGUNDOS
+            $duracion_total += convertDuracionToSeconds($song['duracion']);
+        }
+
+        $stmt = $conn->prepare("
+            INSERT INTO Album
+            (titulo, anio, id_artista, duracion_total, descripcion_album, genero_album, cantidadtemas, precio)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        $cantidadTemas = count($data['songs']);
+
+        $stmt->bind_param(
+            "siiissid",
+            $data['titulo'],
+            $data['anio'],
+            $data['artistId'],
+            $duracion_total,
+            $data['descripcion_album'],
+            $data['genero_album'],
+            $cantidadTemas,
+            $data['precio']
+        );
+        $stmt->execute();
+
+        $albumId = $conn->insert_id;
+
+        $songStmt = $conn->prepare("
+            INSERT INTO Cancion
+            (titulo, duracion, anio, fecha_subida, genero, precio, id_artista, id_album)
+            VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)
+        ");
+
+        foreach ($data['songs'] as $song) {
+            // CONVERTIR DURACIÓN A FORMATO TIME (HH:MM:SS)
+            $duracion_time = convertSecondsToTime(convertDuracionToSeconds($song['duracion']));
+            
+            $songStmt->bind_param(
+                "ssisiii",
+                $song['titulo'],
+                $duracion_time,
+                $data['anio'],
+                $data['genero_album'],
+                $song['precio'],
+                $data['artistId'],
+                $albumId
+            );
+            if (!$songStmt->execute()) {
+                throw new Exception("Error al insertar canción: " . $songStmt->error);
+            }
+        }
+
+        $conn->commit();
+
+        echo json_encode([
+            "success" => true,
+            "message" => "Álbum creado exitosamente",
+            "albumId" => $albumId
+        ]);
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    }
+}
+function updateAlbumWithSongsArtist($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+
+    if (!$data || empty($data['albumId']) || empty($data['artistId'])) {
+        echo json_encode(["success" => false, "message" => "Datos incompletos"]);
+        return;
+    }
+
+    // Verificar que el artista es dueño del álbum
+    $albumId = intval($data['albumId']);
+    $artistId = intval($data['artistId']);
+    
+    $checkSql = "SELECT id_album FROM Album WHERE id_album = $albumId AND id_artista = $artistId";
+    $checkResult = $conn->query($checkSql);
+    
+    if (!$checkResult || $checkResult->num_rows === 0) {
+        echo json_encode(["success" => false, "message" => "No autorizado para editar este álbum"]);
+        return;
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        $cantidadTemas = count($data['songs']);
+
+        // Calcular duración total
+        $duracion_total = 0;
+        foreach ($data['songs'] as $song) {
+            // USAR FUNCIÓN AUXILIAR
+            $duracion_total += convertDuracionToSeconds($song['duracion']);
+        }
+
+        $stmt = $conn->prepare("
+            UPDATE Album SET
+                titulo = ?,
+                anio = ?,
+                descripcion_album = ?,
+                genero_album = ?,
+                cantidadtemas = ?,
+                precio = ?,
+                duracion_total = ?
+            WHERE id_album = ? AND id_artista = ?
+        ");
+
+        $stmt->bind_param(
+            "sissidiii",
+            $data['titulo'],
+            $data['anio'],
+            $data['descripcion_album'],
+            $data['genero_album'],
+            $cantidadTemas,
+            $data['precio'],
+            $duracion_total,
+            $albumId,
+            $artistId
+        );
+        $stmt->execute();
+
+        // Eliminar canciones marcadas para eliminar
+        if (!empty($data['songsToDelete'])) {
+            $deleteIds = implode(',', array_map('intval', $data['songsToDelete']));
+            $conn->query("DELETE FROM Cancion WHERE id_cancion IN ($deleteIds)");
+        }
+
+        // Actualizar o insertar canciones
+        foreach ($data['songs'] as $song) {
+            // CONVERTIR DURACIÓN A FORMATO TIME (HH:MM:SS)
+            $duracion_time = convertSecondsToTime(convertDuracionToSeconds($song['duracion']));
+            
+            if (!empty($song['id_cancion'])) {
+                // Actualizar canción existente
+                $updateStmt = $conn->prepare("
+                    UPDATE Cancion SET
+                        titulo = ?,
+                        duracion = ?,
+                        precio = ?
+                    WHERE id_cancion = ? AND id_artista = ?
+                ");
+                $updateStmt->bind_param(
+                    "ssiii",
+                    $song['titulo'],
+                    $duracion_time,
+                    $song['precio'],
+                    $song['id_cancion'],
+                    $artistId
+                );
+                $updateStmt->execute();
+                $updateStmt->close();
+            } else {
+                // Insertar nueva canción
+                $insertStmt = $conn->prepare("
+                    INSERT INTO Cancion
+                    (titulo, duracion, anio, fecha_subida, genero, precio, id_artista, id_album)
+                    VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)
+                ");
+                
+                $insertStmt->bind_param(
+                    "ssisiii",
+                    $song['titulo'],
+                    $duracion_time,
+                    $data['anio'],
+                    $data['genero_album'],
+                    $song['precio'],
+                    $artistId,
+                    $albumId
+                );
+                $insertStmt->execute();
+                $insertStmt->close();
+            }
+        }
+
+        $conn->commit();
+
+        echo json_encode(["success" => true, "message" => "Álbum y canciones actualizados"]);
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    }
+}
+// ELIMINAR ÁLBUM (ARTISTA)
+function deleteAlbumArtist($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!$data || !isset($data['albumId']) || !isset($data['artistId'])) {
+        echo json_encode(["success" => false, "message" => "Datos incompletos"]);
+        return;
+    }
+    
+    $albumId = intval($data['albumId']);
+    $artistId = intval($data['artistId']);
+    
+    // Verificar que el artista es dueño del álbum
+    $checkSql = "SELECT id_album FROM Album WHERE id_album = $albumId AND id_artista = $artistId";
+    $checkResult = $conn->query($checkSql);
+    
+    if (!$checkResult || $checkResult->num_rows === 0) {
+        echo json_encode(["success" => false, "message" => "No autorizado para eliminar este álbum"]);
+        return;
+    }
+    
+    // Primero eliminar canciones asociadas
+    $deleteSongs = "DELETE FROM Cancion WHERE id_album = $albumId AND id_artista = $artistId";
+    $conn->query($deleteSongs);
+    
+    // Eliminar álbum
+    $sql = "DELETE FROM Album WHERE id_album = $albumId AND id_artista = $artistId";
+    
+    if ($conn->query($sql)) {
+        echo json_encode([
+            "success" => true,
+            "message" => "Álbum eliminado exitosamente"
+        ]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Error al eliminar álbum: " . $conn->error]);
+    }
+}
+
+// OBTENER ARTISTA POR USUARIO ID
+function getArtistaByUserId($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!$data || !isset($data['userId'])) {
+        echo json_encode(["success" => false, "message" => "Usuario no especificado"]);
+        return;
+    }
+    
+    $userId = intval($data['userId']);
+    
+    // Buscar en Usuario_Artista
+    $sql = "SELECT ua.id_artista, a.nombre_artista 
+            FROM Usuario_Artista ua
+            JOIN Artista a ON ua.id_artista = a.id_artista
+            WHERE ua.id_usuario = $userId
+            LIMIT 1";
+    
+    $result = $conn->query($sql);
+    
+    if (!$result || $result->num_rows === 0) {
+        echo json_encode(["success" => false, "message" => "Usuario no tiene perfil de artista"]);
+        return;
+    }
+    
+    $row = $result->fetch_assoc();
+    
+    echo json_encode([
+        "success" => true,
+        "artistId" => $row['id_artista'],
+        "artistName" => $row['nombre_artista']
+    ]);
+}
+
+// OBTENER ÁLBUMES POR ARTISTA ID
+function getAlbumsByArtistId($conn) {
+    $artistId = $_GET['artistId'] ?? '';
+    
+    if (empty($artistId)) {
+        echo json_encode(["success" => false, "message" => "ID de artista requerido"]);
+        return;
+    }
+    
+    $artistId = intval($artistId);
+    
+    $sql = "SELECT al.id_album, al.titulo, al.anio, al.id_artista, al.duracion_total, 
+                   al.descripcion_album, al.genero_album, al.cantidadtemas, al.precio,
+                   ar.nombre_artista
+            FROM Album al
+            JOIN Artista ar ON al.id_artista = ar.id_artista
+            WHERE al.id_artista = $artistId
+            ORDER BY al.anio DESC";
+    
+    $result = $conn->query($sql);
+
+    if (!$result) {
+        echo json_encode(["success" => false, "message" => "Error en la consulta: " . $conn->error]);
+        return;
+    }
+
+    $albums = [];
+    while ($row = $result->fetch_assoc()) {
+        $albums[] = $row;
+    }
+
+    echo json_encode([
+        "success" => true,
+        "albums" => $albums
+    ]);
+}
+
+// =======================
+//  FUNCIONES COMPARTIDAS
+// =======================
+
+// OBTENER ÁLBUMES
 function getAlbums($conn) {
     $sql = "SELECT al.id_album, al.titulo, al.anio, al.id_artista, al.duracion_total, 
                    al.descripcion_album, al.genero_album, al.cantidadtemas, 
@@ -436,9 +1013,7 @@ function getAlbums($conn) {
     ]);
 }
 
-// =======================
-//  OBTENER GÉNEROS
-// =======================
+// OBTENER GÉNEROS
 function getGeneros($conn) {
     $sql = "SELECT DISTINCT genero_album FROM Album ORDER BY genero_album ASC";
     $result = $conn->query($sql);
@@ -459,9 +1034,7 @@ function getGeneros($conn) {
     ]);
 }
 
-// =======================
-//  OBTENER ARTISTAS
-// =======================
+// OBTENER ARTISTAS
 function getArtistas($conn) {
     $sql = "SELECT id_artista, nombre_artista, correo 
             FROM Artista 
@@ -490,45 +1063,7 @@ function getArtistas($conn) {
     ]);
 }
 
-// =======================
-//  OBTENER ÁLBUMES POR ARTISTA
-// =======================
-function getAlbumsByArtist($conn) {
-    $artistId = $_GET['artistId'] ?? '';
-    
-    $sql = "SELECT al.id_album, al.titulo, al.anio, al.id_artista, al.duracion_total, 
-                   al.descripcion_album, al.genero_album, al.cantidadtemas, al.precio,
-                   ar.nombre_artista
-            FROM Album al
-            JOIN Artista ar ON al.id_artista = ar.id_artista";
-    
-    if (!empty($artistId) && $artistId !== 'all') {
-        $sql .= " WHERE al.id_artista = " . intval($artistId);
-    }
-    
-    $sql .= " ORDER BY al.anio DESC";
-    
-    $result = $conn->query($sql);
-
-    if (!$result) {
-        echo json_encode(["success" => false, "message" => "Error en la consulta: " . $conn->error]);
-        return;
-    }
-
-    $albums = [];
-    while ($row = $result->fetch_assoc()) {
-        $albums[] = $row;
-    }
-
-    echo json_encode([
-        "success" => true,
-        "albums" => $albums
-    ]);
-}
-
-// =======================
-//  OBTENER CANCIONES POR ÁLBUM
-// =======================
+// OBTENER CANCIONES POR ÁLBUM
 function getCancionesByAlbum($conn) {
     $albumId = $_GET['albumId'] ?? '';
     
@@ -554,7 +1089,7 @@ function getCancionesByAlbum($conn) {
     
     $albumData = $resultAlbum->fetch_assoc();
     
-    // Obtener canciones REALES de la base de datos (tabla Cancion)
+    // Obtener canciones
     $sqlCanciones = "SELECT c.id_cancion, c.titulo, c.duracion, c.anio, 
                             c.precio, c.genero, c.id_artista, c.id_album,
                             ar.nombre_artista
@@ -588,21 +1123,85 @@ function getCancionesByAlbum($conn) {
         }
     }
     
-    if (empty($canciones)) {
-        echo json_encode([
-            "success" => true,
-            "album" => $albumData,
-            "canciones" => [],
-            "message" => "Este álbum no tiene canciones registradas"
-        ]);
-        return;
-    }
-    
     echo json_encode([
         "success" => true,
         "album" => $albumData,
         "canciones" => $canciones
     ]);
+}
+
+// CREAR ARTISTA
+function createArtist($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!$data) {
+        echo json_encode(["success" => false, "message" => "No se recibieron datos"]);
+        return;
+    }
+    
+    $required = ['nombre_artista', 'correo', 'contrasenia'];
+    foreach ($required as $field) {
+        if (!isset($data[$field]) || empty($data[$field])) {
+            echo json_encode(["success" => false, "message" => "Campo $field requerido"]);
+            return;
+        }
+    }
+    
+    $nombre_artista = $conn->real_escape_string($data['nombre_artista']);
+    $correo = $conn->real_escape_string($data['correo']);
+    $contrasenia = $conn->real_escape_string($data['contrasenia']);
+    
+    $sql = "INSERT INTO Artista (nombre_artista, correo, contrasenia) 
+            VALUES ('$nombre_artista', '$correo', '$contrasenia')";
+    
+    if ($conn->query($sql)) {
+        echo json_encode([
+            "success" => true,
+            "message" => "Artista creado exitosamente",
+            "artistId" => $conn->insert_id
+        ]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Error al crear artista: " . $conn->error]);
+    }
+}
+
+// ACTUALIZAR ARTISTA
+function updateArtist($conn) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!$data || !isset($data['id_artista'])) {
+        echo json_encode(["success" => false, "message" => "Datos incompletos"]);
+        return;
+    }
+    
+    $artistId = intval($data['id_artista']);
+    $updates = [];
+    
+    if (isset($data['nombre_artista'])) {
+        $updates[] = "nombre_artista = '" . $conn->real_escape_string($data['nombre_artista']) . "'";
+    }
+    if (isset($data['correo'])) {
+        $updates[] = "correo = '" . $conn->real_escape_string($data['correo']) . "'";
+    }
+    if (isset($data['contrasenia'])) {
+        $updates[] = "contrasenia = '" . $conn->real_escape_string($data['contrasenia']) . "'";
+    }
+    
+    if (empty($updates)) {
+        echo json_encode(["success" => false, "message" => "No hay datos para actualizar"]);
+        return;
+    }
+    
+    $sql = "UPDATE Artista SET " . implode(', ', $updates) . " WHERE id_artista = $artistId";
+    
+    if ($conn->query($sql)) {
+        echo json_encode([
+            "success" => true,
+            "message" => "Artista actualizado exitosamente"
+        ]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Error al actualizar artista: " . $conn->error]);
+    }
 }
 
 // =======================
@@ -896,9 +1495,6 @@ function getOrCreateCartAction($conn) {
 
 // ========================
 //  AGREGAR AL CARRITO
-// ========================
-// ========================
-//  AGREGAR AL CARRITO (VERSIÓN MEJORADA)
 // ========================
 function addToCart($conn) {
     $data = json_decode(file_get_contents("php://input"), true);
@@ -1337,8 +1933,8 @@ function getAlbumsByIds($conn) {
     ]);
 }
 
-
 // FUNCIÓN ALTERNATIVA PARA BIBLIOTECA
+// FUNCIÓN ALTERNATIVA PARA BIBLIOTECA - CORREGIDA
 function getUserLibrary($conn) {
     $userId = $_GET['userId'] ?? '';
     
@@ -1349,11 +1945,14 @@ function getUserLibrary($conn) {
     
     $userId = intval($userId);
     
-    // OPCIÓN 1: Buscar en CompraItem (si existen compras)
+    // OPCIÓN 1: Buscar en CompraItem SOLO compras completadas/pagadas
     $sql = "SELECT DISTINCT ci.id_producto 
             FROM CompraItem ci
             JOIN Compra c ON ci.id_compra = c.id_compra
-            WHERE c.id_usuario = $userId AND ci.tipo = 'album'";
+            JOIN Estatus_Compra ec ON c.id_estatus = ec.id_estatus
+            WHERE c.id_usuario = $userId 
+            AND ci.tipo = 'album'
+            AND ec.estatus IN ('Pagado', 'Completado')"; // Añadir ambos estados por si acaso
     
     $result = $conn->query($sql);
     
@@ -1364,28 +1963,12 @@ function getUserLibrary($conn) {
         }
     }
     
-    // OPCIÓN 2: Si no hay compras, buscar en CarritoItem (para testing)
-    if (empty($albumIds)) {
-        $sqlCart = "SELECT DISTINCT ci.id_producto 
-                   FROM CarritoItem ci
-                   JOIN Carrito c ON ci.id_carrito = c.id_carrito
-                   WHERE c.id_usuario = $userId AND ci.tipo = 'album'";
-        
-        $resultCart = $conn->query($sqlCart);
-        
-        if ($resultCart && $resultCart->num_rows > 0) {
-            while ($row = $resultCart->fetch_assoc()) {
-                $albumIds[] = intval($row['id_producto']);
-            }
-        }
-    }
-    
-    // Si aún no hay álbumes, mostrar algunos álbumes de ejemplo
+    // OPCIÓN 2: Si no hay compras, mostrar mensaje claro
     if (empty($albumIds)) {
         echo json_encode([
             "success" => true,
             "albums" => [],
-            "message" => "No hay álbumes en tu biblioteca"
+            "message" => "No has comprado ningún álbum todavía"
         ]);
         return;
     }
@@ -1416,7 +1999,6 @@ function getUserLibrary($conn) {
         "count" => count($albums)
     ]);
 }
-// Agrega esto después de las funciones existentes en api.php, antes del cierre $conn->close();
 
 // FUNCIÓN PARA OBTENER FAVORITOS
 function getUserFavorites($conn) {
@@ -1455,10 +2037,6 @@ function getUserFavorites($conn) {
         "count" => count($albumIds)
     ]);
 }
-
-
-
-// Agrega esto después de las funciones existentes en api.php, antes del cierre $conn->close();
 
 // FUNCIÓN PARA OBTENER TARJETAS DEL USUARIO
 function getUserCards($conn) {
@@ -1507,8 +2085,6 @@ function getUserCards($conn) {
     ]);
 }
 
-// FUNCIÓN PARA AGREGAR TARJETA DE USUARIO
-// FUNCIÓN PARA AGREGAR TARJETA DE USUARIO
 // FUNCIÓN PARA AGREGAR TARJETA DE USUARIO
 function addUserCard($conn) {
     $data = json_decode(file_get_contents("php://input"), true);
@@ -1675,10 +2251,6 @@ function deleteUserCard($conn) {
     }
 }
 
-
-// Agrega esto después de las funciones existentes en api.php, antes del cierre $conn->close();
-
-
 // FUNCIÓN PARA OBTENER COMPRAS DEL USUARIO
 function getUserPurchases($conn) {
     $userId = $_GET['userId'] ?? '';
@@ -1829,9 +2401,6 @@ function cancelPurchase($conn) {
 // ========================
 //  FUNCIÓN PARA PROCESAR PAGO
 // ========================
-// ========================
-//  PROCESAR PAGO
-// ========================
 function processPayment($conn) {
     $data = json_decode(file_get_contents("php://input"), true);
     
@@ -1947,185 +2516,9 @@ function processPayment($conn) {
         echo json_encode(["success" => false, "message" => $e->getMessage()]);
     }
 }
-// ========================
-//  GENERAR DATOS DEL TICKET
-// ========================
-function generateTicketData($conn, $compraId, $userId, $total, $items) {
-    // Obtener información del usuario
-    $userSql = "SELECT nombre, apellido, email FROM usuarios WHERE id = $userId";
-    $userResult = $conn->query($userSql);
-    $user = $userResult->fetch_assoc();
-    
-    // Obtener información de productos
-    $productos = [];
-    foreach ($items as $item) {
-        if ($item['tipo'] === 'album') {
-            $prodSql = "SELECT a.titulo, ar.nombre_artista 
-                       FROM Album a 
-                       JOIN Artista ar ON a.id_artista = ar.id_artista 
-                       WHERE a.id_album = {$item['id_producto']}";
-        } else {
-            $prodSql = "SELECT c.titulo, ar.nombre_artista 
-                       FROM Cancion c 
-                       JOIN Artista ar ON c.id_artista = ar.id_artista 
-                       WHERE c.id_cancion = {$item['id_producto']}";
-        }
-        
-        $prodResult = $conn->query($prodSql);
-        if ($prodResult && $prodResult->num_rows > 0) {
-            $prod = $prodResult->fetch_assoc();
-            $productos[] = [
-                'tipo' => $item['tipo'],
-                'nombre' => $prod['titulo'],
-                'artista' => $prod['nombre_artista'],
-                'cantidad' => $item['cantidad'],
-                'precio' => $item['precio'],
-                'subtotal' => $item['cantidad'] * $item['precio']
-            ];
-        }
-    }
-    
-    // Información de la empresa
-    $empresa = [
-        'nombre' => 'SoundSpace',
-        'direccion' => 'Av. Música 123, Ciudad Digital',
-        'telefono' => '(55) 1234-5678',
-        'email' => 'ventas@soundspace.com',
-        'sitio_web' => 'www.soundspace.com'
-    ];
-    
-    return [
-        'compra_id' => $compraId,
-        'fecha' => date('d/m/Y H:i:s'),
-        'usuario' => [
-            'nombre' => $user['nombre'] . ' ' . $user['apellido'],
-            'email' => $user['email']
-        ],
-        'empresa' => $empresa,
-        'productos' => $productos,
-        'total' => $total,
-        'iva' => $total * 0.16, // Ejemplo: 16% de IVA
-        'total_con_iva' => $total * 1.16
-    ];
-}
 
 // ========================
 //  GENERAR PDF DEL TICKET
-// ========================
-function generatePDF($ticketData) {
-    require_once 'vendor/autoload.php'; // Requiere composer y TCPDF
-    
-    try {
-        // Crear nuevo PDF
-        $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-        
-        // Configurar documento
-        $pdf->SetCreator('SoundSpace');
-        $pdf->SetAuthor('SoundSpace');
-        $pdf->SetTitle('Ticket de Compra #' . $ticketData['compra_id']);
-        $pdf->SetSubject('Ticket de Compra');
-        
-        // Agregar página
-        $pdf->AddPage();
-        
-        // Logo de la empresa
-        $logo = 'images/logo.png'; // Asegúrate de tener un logo
-        if (file_exists($logo)) {
-            $pdf->Image($logo, 10, 10, 30, 0, 'PNG');
-        }
-        
-        // Encabezado
-        $pdf->SetFont('helvetica', 'B', 16);
-        $pdf->Cell(0, 10, 'SOUNDSPACE - TICKET DE COMPRA', 0, 1, 'C');
-        $pdf->SetFont('helvetica', '', 10);
-        $pdf->Cell(0, 5, 'Ticket #' . $ticketData['compra_id'], 0, 1, 'C');
-        $pdf->Cell(0, 5, 'Fecha: ' . $ticketData['fecha'], 0, 1, 'C');
-        
-        // Línea separadora
-        $pdf->Ln(5);
-        $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
-        $pdf->Ln(5);
-        
-        // Información de la empresa
-        $pdf->SetFont('helvetica', 'B', 11);
-        $pdf->Cell(0, 6, $ticketData['empresa']['nombre'], 0, 1);
-        $pdf->SetFont('helvetica', '', 9);
-        $pdf->Cell(0, 5, $ticketData['empresa']['direccion'], 0, 1);
-        $pdf->Cell(0, 5, 'Tel: ' . $ticketData['empresa']['telefono'], 0, 1);
-        $pdf->Cell(0, 5, 'Email: ' . $ticketData['empresa']['email'], 0, 1);
-        
-        // Información del cliente
-        $pdf->Ln(5);
-        $pdf->SetFont('helvetica', 'B', 11);
-        $pdf->Cell(0, 6, 'INFORMACIÓN DEL CLIENTE', 0, 1);
-        $pdf->SetFont('helvetica', '', 9);
-        $pdf->Cell(0, 5, 'Nombre: ' . $ticketData['usuario']['nombre'], 0, 1);
-        $pdf->Cell(0, 5, 'Email: ' . $ticketData['usuario']['email'], 0, 1);
-        
-        // Tabla de productos
-        $pdf->Ln(8);
-        $pdf->SetFont('helvetica', 'B', 11);
-        $pdf->Cell(0, 6, 'DETALLE DE LA COMPRA', 0, 1);
-        
-        // Cabecera de la tabla
-        $pdf->SetFillColor(200, 200, 200);
-        $pdf->SetFont('helvetica', 'B', 9);
-        $pdf->Cell(60, 6, 'Producto', 1, 0, 'L', 1);
-        $pdf->Cell(40, 6, 'Artista', 1, 0, 'L', 1);
-        $pdf->Cell(25, 6, 'Cantidad', 1, 0, 'C', 1);
-        $pdf->Cell(30, 6, 'Precio Unit.', 1, 0, 'R', 1);
-        $pdf->Cell(35, 6, 'Subtotal', 1, 1, 'R', 1);
-        
-        // Productos
-        $pdf->SetFont('helvetica', '', 9);
-        foreach ($ticketData['productos'] as $producto) {
-            $pdf->Cell(60, 6, substr($producto['nombre'], 0, 30), 1, 0, 'L');
-            $pdf->Cell(40, 6, substr($producto['artista'], 0, 20), 1, 0, 'L');
-            $pdf->Cell(25, 6, $producto['cantidad'], 1, 0, 'C');
-            $pdf->Cell(30, 6, '$' . number_format($producto['precio'], 2), 1, 0, 'R');
-            $pdf->Cell(35, 6, '$' . number_format($producto['subtotal'], 2), 1, 1, 'R');
-        }
-        
-        // Totales
-        $pdf->Ln(5);
-        $pdf->SetFont('helvetica', '', 10);
-        $pdf->Cell(140, 6, 'Subtotal:', 0, 0, 'R');
-        $pdf->Cell(50, 6, '$' . number_format($ticketData['total'], 2), 0, 1, 'R');
-        
-        $pdf->Cell(140, 6, 'IVA (16%):', 0, 0, 'R');
-        $pdf->Cell(50, 6, '$' . number_format($ticketData['iva'], 2), 0, 1, 'R');
-        
-        $pdf->SetFont('helvetica', 'B', 11);
-        $pdf->Cell(140, 8, 'TOTAL:', 0, 0, 'R');
-        $pdf->Cell(50, 8, '$' . number_format($ticketData['total_con_iva'], 2), 0, 1, 'R');
-        
-        // Pie de página
-        $pdf->Ln(15);
-        $pdf->SetFont('helvetica', 'I', 8);
-        $pdf->MultiCell(0, 4, 
-            "Gracias por su compra.\n" .
-            "Este ticket es su comprobante de compra.\n" .
-            "Para cualquier aclaración, contacte a soporte: " . $ticketData['empresa']['email'] . "\n" .
-            "Fecha de emisión: " . $ticketData['fecha'], 0, 'C');
-        
-        // Guardar PDF
-        $filename = 'tickets/ticket_' . $ticketData['compra_id'] . '_' . time() . '.pdf';
-        if (!is_dir('tickets')) {
-            mkdir('tickets', 0777, true);
-        }
-        
-        $pdf->Output(__DIR__ . '/' . $filename, 'F');
-        
-        return $filename;
-        
-    } catch (Exception $e) {
-        error_log("Error generando PDF: " . $e->getMessage());
-        return null;
-    }
-}
-
-// ========================
-//  FUNCIÓN ALTERNATIVA SIMPLE (HTML to PDF)
 // ========================
 function generateTicketPDF($conn) {
     $data = json_decode(file_get_contents("php://input"), true);
@@ -2319,8 +2712,6 @@ HTML;
     return $html;
 }
 
-
-
 // =======================
 //  ESTADÍSTICAS DE USUARIOS
 // =======================
@@ -2481,7 +2872,6 @@ function getRecentActivity($conn) {
     ]);
 }
 
-
 // =======================
 //  OBTENER TODOS LOS USUARIOS
 // =======================
@@ -2564,10 +2954,7 @@ function createUser($conn) {
     $apellido = $conn->real_escape_string($data['apellido']);
     $telefono = $conn->real_escape_string($data['telefono']);
     $fecha_nac = $conn->real_escape_string($data['fecha_nac']);
-
-    // ⚠️ tu login NO usa hash, así que NO lo hasheamos aquí
     $password = $conn->real_escape_string($data['password']);
-
     $role = 'user';
 
     $sql = "INSERT INTO usuarios
@@ -2721,6 +3108,7 @@ function deleteUser($conn) {
         }
     }
 }
+
 // =======================
 //  OBTENER TODAS LAS COMPRAS
 // =======================
@@ -3056,9 +3444,6 @@ function getPurchaseStats($conn) {
     ]);
 }
 
-
-
-
 function createAlbum($conn) {
     $data = json_decode(file_get_contents("php://input"), true);
     
@@ -3148,291 +3533,4 @@ function updateAlbum($conn) {
         echo json_encode(["success" => false, "message" => "Error al actualizar álbum: " . $conn->error]);
     }
 }
-
-function deleteAlbum($conn) {
-    $data = json_decode(file_get_contents("php://input"), true);
-    
-    if (!$data || !isset($data['albumId'])) {
-        echo json_encode(["success" => false, "message" => "ID de álbum requerido"]);
-        return;
-    }
-    
-    $albumId = intval($data['albumId']);
-    
-    // Primero eliminar canciones asociadas (si existen)
-    $deleteSongs = "DELETE FROM Cancion WHERE id_album = $albumId";
-    $conn->query($deleteSongs);
-    
-    // Eliminar álbum
-    $sql = "DELETE FROM Album WHERE id_album = $albumId";
-    
-    if ($conn->query($sql)) {
-        echo json_encode([
-            "success" => true,
-            "message" => "Álbum eliminado exitosamente"
-        ]);
-    } else {
-        echo json_encode(["success" => false, "message" => "Error al eliminar álbum: " . $conn->error]);
-    }
-}
-
-function createArtist($conn) {
-    $data = json_decode(file_get_contents("php://input"), true);
-    
-    if (!$data) {
-        echo json_encode(["success" => false, "message" => "No se recibieron datos"]);
-        return;
-    }
-    
-    $required = ['nombre_artista', 'correo', 'contrasenia'];
-    foreach ($required as $field) {
-        if (!isset($data[$field]) || empty($data[$field])) {
-            echo json_encode(["success" => false, "message" => "Campo $field requerido"]);
-            return;
-        }
-    }
-    
-    $nombre_artista = $conn->real_escape_string($data['nombre_artista']);
-    $correo = $conn->real_escape_string($data['correo']);
-    $contrasenia = $conn->real_escape_string($data['contrasenia']);
-    
-    $sql = "INSERT INTO Artista (nombre_artista, correo, contrasenia) 
-            VALUES ('$nombre_artista', '$correo', '$contrasenia')";
-    
-    if ($conn->query($sql)) {
-        echo json_encode([
-            "success" => true,
-            "message" => "Artista creado exitosamente",
-            "artistId" => $conn->insert_id
-        ]);
-    } else {
-        echo json_encode(["success" => false, "message" => "Error al crear artista: " . $conn->error]);
-    }
-}
-
-function updateArtist($conn) {
-    $data = json_decode(file_get_contents("php://input"), true);
-    
-    if (!$data || !isset($data['id_artista'])) {
-        echo json_encode(["success" => false, "message" => "Datos incompletos"]);
-        return;
-    }
-    
-    $artistId = intval($data['id_artista']);
-    $updates = [];
-    
-    if (isset($data['nombre_artista'])) {
-        $updates[] = "nombre_artista = '" . $conn->real_escape_string($data['nombre_artista']) . "'";
-    }
-    if (isset($data['correo'])) {
-        $updates[] = "correo = '" . $conn->real_escape_string($data['correo']) . "'";
-    }
-    if (isset($data['contrasenia'])) {
-        $updates[] = "contrasenia = '" . $conn->real_escape_string($data['contrasenia']) . "'";
-    }
-    
-    if (empty($updates)) {
-        echo json_encode(["success" => false, "message" => "No hay datos para actualizar"]);
-        return;
-    }
-    
-    $sql = "UPDATE Artista SET " . implode(', ', $updates) . " WHERE id_artista = $artistId";
-    
-    if ($conn->query($sql)) {
-        echo json_encode([
-            "success" => true,
-            "message" => "Artista actualizado exitosamente"
-        ]);
-    } else {
-        echo json_encode(["success" => false, "message" => "Error al actualizar artista: " . $conn->error]);
-    }
-}
-
-function createAlbumWithSongs($conn) {
-    $data = json_decode(file_get_contents("php://input"), true);
-
-    if (!$data || empty($data['songs'])) {
-        echo json_encode(["success" => false, "message" => "El álbum debe tener canciones"]);
-        return;
-    }
-
-    $conn->begin_transaction();
-
-    try {
-        // Calcular duración total sumando todas las canciones
-        $duracion_total = 0;
-        foreach ($data['songs'] as $song) {
-            $duracion_total += intval($song['duracion']);
-        }
-
-        $stmt = $conn->prepare("
-            INSERT INTO Album
-            (titulo, anio, id_artista, duracion_total, descripcion_album, genero_album, cantidadtemas, precio)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-
-        $cantidadTemas = count($data['songs']);
-
-        $stmt->bind_param(
-            "siiissid",
-            $data['titulo'],
-            $data['anio'],
-            $data['id_artista'],
-            $duracion_total,
-            $data['descripcion_album'],
-            $data['genero_album'],
-            $cantidadTemas,
-            $data['precio']
-        );
-        $stmt->execute();
-
-        $albumId = $conn->insert_id;
-
-        $songStmt = $conn->prepare("
-            INSERT INTO Cancion
-            (titulo, duracion, anio, fecha_subida, genero, precio, id_artista, id_album)
-            VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)
-        ");
-
-        foreach ($data['songs'] as $song) {
-            $songStmt->bind_param(
-                "siisiii",
-                $song['titulo'],
-                $song['duracion'],
-                $data['anio'],
-                $data['genero_album'],
-                $song['precio'],
-                $data['id_artista'],
-                $albumId
-            );
-            if (!$songStmt->execute()) {
-                throw new Exception("Error al insertar canción: " . $songStmt->error);
-            }
-        }
-
-        $conn->commit();
-
-        echo json_encode([
-            "success" => true,
-            "message" => "Álbum creado exitosamente",
-            "albumId" => $albumId
-        ]);
-
-    } catch (Exception $e) {
-        $conn->rollback();
-        echo json_encode(["success" => false, "message" => $e->getMessage()]);
-    }
-}
-function updateAlbumWithSongs($conn) {
-    $data = json_decode(file_get_contents("php://input"), true);
-
-    if (!$data || empty($data['id_album'])) {
-        echo json_encode(["success" => false, "message" => "ID de álbum requerido"]);
-        return;
-    }
-
-    $conn->begin_transaction();
-
-    try {
-        $cantidadTemas = count($data['songs']);
-
-        $stmt = $conn->prepare("
-            UPDATE Album SET
-                titulo = ?,
-                anio = ?,
-                id_artista = ?,
-                descripcion_album = ?,
-                genero_album = ?,
-                cantidadtemas = ?,
-                precio = ?
-            WHERE id_album = ?
-        ");
-
-        $stmt->bind_param(
-            "siissidi",
-            $data['titulo'],
-            $data['anio'],
-            $data['id_artista'],
-            $data['descripcion_album'],
-            $data['genero_album'],
-            $cantidadTemas,
-            $data['precio'],
-            $data['id_album']
-        );
-        $stmt->execute();
-
-        // Eliminar canciones marcadas para eliminar
-        if (!empty($data['songsToDelete'])) {
-            $deleteIds = implode(',', array_map('intval', $data['songsToDelete']));
-            $conn->query("DELETE FROM Cancion WHERE id_cancion IN ($deleteIds)");
-        }
-
-        // Actualizar o insertar canciones
-        foreach ($data['songs'] as $song) {
-            if (!empty($song['id_cancion'])) {
-                // Actualizar canción existente
-                $updateStmt = $conn->prepare("
-                    UPDATE Cancion SET
-                        titulo = ?,
-                        duracion = ?,
-                        precio = ?
-                    WHERE id_cancion = ?
-                ");
-                $updateStmt->bind_param(
-                    "siii",
-                    $song['titulo'],
-                    $song['duracion'],
-                    $song['precio'],
-                    $song['id_cancion']
-                );
-                $updateStmt->execute();
-            } else {
-                // Insertar nueva canción
-                $insertStmt = $conn->prepare("
-                    INSERT INTO Cancion
-                    (titulo, duracion, anio, fecha_subida, genero, precio, id_artista, id_album)
-                    VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)
-                ");
-                
-                $insertStmt->bind_param(
-                    "ssisiii",
-                    $song['titulo'],
-                    $song['duracion'],
-                    $data['anio'],
-                    $data['genero_album'],
-                    $song['precio'],
-                    $data['id_artista'],
-                    $data['id_album']
-                );
-                $insertStmt->execute();
-            }
-        }
-
-        $conn->commit();
-
-        echo json_encode(["success" => true, "message" => "Álbum y canciones actualizados"]);
-
-    } catch (Exception $e) {
-        $conn->rollback();
-        echo json_encode(["success" => false, "message" => $e->getMessage()]);
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ?>

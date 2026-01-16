@@ -14,16 +14,17 @@
         }
 
         /* Sidebar */
-        .sidebar {
-            width: 250px;
-            background: #1a1a1a;
-            color: white;
-            padding: 25px 20px;
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            border-right: 3px solid #8b0000;
-        }
+       .sidebar {
+    position: fixed;          /* 👈 CLAVE */
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    background: #111;
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+
 
         .sidebar-title {
             color: #8b0000;

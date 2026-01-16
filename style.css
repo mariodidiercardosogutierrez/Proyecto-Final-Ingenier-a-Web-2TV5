@@ -42,19 +42,20 @@ body {
 
 /* --- SIDEBAR --- */
 .sidebar {
-    width: 260px;
-    background: var(--white-clean);
+    position: fixed;          /* 👈 CLAVE */
+    top: 0;
+    left: 0;
+    width: 280px;
     height: 100vh;
-    padding: 20px;
-    position: fixed;
-    overflow-y: auto;
-    border-right: 2px solid var(--red-main);
-    transition: transform 0.3s ease, box-shadow 0.25s ease;
-    color: var(--red-main);
+    background: #111;
+    transition: transform 0.3s ease;
+    z-index: 1000;
 }
 
+
 .sidebar.hidden {
-    transform: translateX(-280px);
+    transform: translateX(-280px) !important;
+    box-shadow: none !important;
 }
 
 .sidebar:hover {
